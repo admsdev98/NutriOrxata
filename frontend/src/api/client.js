@@ -28,23 +28,24 @@ function removeUser() {
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
   const token = getToken();
+  const { skipAuthRedirect, ...requestOptions } = options;
   
   const config = {
     headers: {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
+      ...requestOptions.headers,
     },
-    ...options,
+    ...requestOptions,
   };
 
-  if (options.body && typeof options.body === 'object') {
-    config.body = JSON.stringify(options.body);
+  if (requestOptions.body && typeof requestOptions.body === 'object') {
+    config.body = JSON.stringify(requestOptions.body);
   }
 
   const response = await fetch(url, config);
   
-  if (response.status === 401) {
+  if (response.status === 401 && !skipAuthRedirect) {
     removeToken();
     removeUser();
     window.location.href = '/login';
@@ -68,7 +69,8 @@ export const api = {
     login: async (email, password) => {
       const response = await request('/api/auth/login', {
         method: 'POST',
-        body: { email, password }
+        body: { email, password },
+        skipAuthRedirect: true,
       });
       setToken(response.access_token);
       setUser(response.usuario);
@@ -87,8 +89,12 @@ export const api = {
       return user?.rol === 'admin';
     },
     register: (data) => request('/api/auth/register', { method: 'POST', body: data }),
-    listUsers: () => request('/api/auth/usuarios'),
+    listUsers: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/api/auth/usuarios${query ? `?${query}` : ''}`);
+    },
     deleteUser: (id) => request(`/api/auth/usuarios/${id}`, { method: 'DELETE' }),
+    updateUser: (id, data) => request(`/api/auth/usuarios/${id}`, { method: 'PUT', body: data }),
   },
 
   ingredientes: {
@@ -118,26 +124,6 @@ export const api = {
       request(`/api/platos/${platoId}/ingredientes/${ingredienteId}`, { method: 'PUT', body: data }),
     removeIngrediente: (platoId, ingredienteId) => 
       request(`/api/platos/${platoId}/ingredientes/${ingredienteId}`, { method: 'DELETE' }),
-    addFamiliar: (platoId, familiarId) =>
-      request(`/api/platos/${platoId}/familiares/${familiarId}`, { method: 'POST' }),
-    removeFamiliar: (platoId, familiarId) =>
-      request(`/api/platos/${platoId}/familiares/${familiarId}`, { method: 'DELETE' }),
-  },
-
-  familiares: {
-    list: (params = {}) => {
-      const query = new URLSearchParams(params).toString();
-      return request(`/api/familiares${query ? `?${query}` : ''}`);
-    },
-    listActivos: () => request('/api/familiares/activos'),
-    get: (id) => request(`/api/familiares/${id}`),
-    create: (data) => request('/api/familiares', { method: 'POST', body: data }),
-    update: (id, data) => request(`/api/familiares/${id}`, { method: 'PUT', body: data }),
-    delete: (id) => request(`/api/familiares/${id}`, { method: 'DELETE' }),
-    calcularObjetivos: (params) => {
-      const query = new URLSearchParams(params).toString();
-      return request(`/api/familiares/calcular-objetivos?${query}`, { method: 'POST' });
-    }
   },
 
   planificacion: {
@@ -145,13 +131,22 @@ export const api = {
       const query = new URLSearchParams(params).toString();
       return request(`/api/planificacion${query ? `?${query}` : ''}`);
     },
-    resumen: (familiarId, semanaInicio) => {
+    resumen: (clientId, semanaInicio) => {
       const params = semanaInicio ? `?semana_inicio=${semanaInicio}` : '';
-      return request(`/api/planificacion/resumen/${familiarId}${params}`);
+      return request(`/api/planificacion/resumen/${clientId}${params}`);
     },
     create: (data) => request('/api/planificacion', { method: 'POST', body: data }),
     update: (id, data) => request(`/api/planificacion/${id}`, { method: 'PUT', body: data }),
     delete: (id) => request(`/api/planificacion/${id}`, { method: 'DELETE' }),
+  },
+
+  clientesPlatos: {
+    list: (clientId) => request(`/api/clientes/${clientId}/platos`),
+    create: (clientId, data) => request(`/api/clientes/${clientId}/platos`, { method: 'POST', body: data }),
+    update: (clientId, clientePlatoId, data) =>
+      request(`/api/clientes/${clientId}/platos/${clientePlatoId}`, { method: 'PUT', body: data }),
+    delete: (clientId, clientePlatoId) =>
+      request(`/api/clientes/${clientId}/platos/${clientePlatoId}`, { method: 'DELETE' }),
   },
 
   health: () => request('/api/health'),

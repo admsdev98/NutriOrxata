@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Numeric, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, Text, DateTime, ForeignKey, Enum
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -7,6 +8,7 @@ import enum
 
 class MomentoDia(str, enum.Enum):
     DESAYUNO = "desayuno"
+    ALMUERZO = "almuerzo"
     COMIDA = "comida"
     MERIENDA = "merienda"
     CENA = "cena"
@@ -18,7 +20,16 @@ class Plato(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String(200), nullable=False)
     descripcion = Column(Text)
-    momento_dia = Column(String(20), nullable=False)
+    momentos_dia = Column(
+        ARRAY(
+            Enum(
+                MomentoDia,
+                name="momento_dia",
+                values_callable=lambda enum_cls: [e.value for e in enum_cls],
+            )
+        ),
+        nullable=False,
+    )
     calorias_totales = Column(Numeric(10, 2), default=0)
     proteinas_totales = Column(Numeric(10, 2), default=0)
     carbohidratos_totales = Column(Numeric(10, 2), default=0)
@@ -29,7 +40,6 @@ class Plato(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     ingredientes = relationship("PlatoIngrediente", back_populates="plato", cascade="all, delete-orphan")
-    familiares = relationship("PlatoFamiliar", back_populates="plato", cascade="all, delete-orphan")
 
 
 class PlatoIngrediente(Base):
@@ -47,15 +57,3 @@ class PlatoIngrediente(Base):
 
     plato = relationship("Plato", back_populates="ingredientes")
     ingrediente = relationship("Ingrediente")
-
-
-class PlatoFamiliar(Base):
-    __tablename__ = "plato_familiares"
-
-    id = Column(Integer, primary_key=True)
-    plato_id = Column(Integer, ForeignKey("platos.id", ondelete="CASCADE"), nullable=False)
-    familiar_id = Column(Integer, ForeignKey("familiares.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-    plato = relationship("Plato", back_populates="familiares")
-    familiar = relationship("Familiar")

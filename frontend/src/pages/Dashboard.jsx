@@ -97,7 +97,11 @@ function Dashboard() {
                   }}>
                     <div style={{ fontWeight: '600', marginBottom: '4px' }}>{p.nombre}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      <span className="badge badge-primary">{p.momento_dia}</span>
+                      {(Array.isArray(p.momentos_dia) && p.momentos_dia.length ? p.momentos_dia : (p.momento_dia ? [p.momento_dia] : [])).map(momento => (
+                        <span key={momento} className="badge badge-primary" style={{ marginRight: '6px' }}>
+                          {momento}
+                        </span>
+                      ))}
                       <span style={{ marginLeft: '8px' }}>{Math.round(p.calorias_totales)} kcal</span>
                     </div>
                   </div>

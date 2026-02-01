@@ -8,7 +8,8 @@ class PlanificacionBase(BaseModel):
     dia: str
     momento: str
     plato_id: Optional[int] = None
-    familiar_id: int
+    cliente_plato_id: Optional[int] = None
+    client_id: int
     notas: Optional[str] = None
 
 
@@ -18,14 +19,17 @@ class PlanificacionCreate(PlanificacionBase):
 
 class PlanificacionUpdate(BaseModel):
     plato_id: Optional[int] = None
+    cliente_plato_id: Optional[int] = None
     notas: Optional[str] = None
 
 
 class PlanificacionResponse(PlanificacionBase):
     id: int
     plato_nombre: Optional[str] = None
-    familiar_nombre: str
+    cliente_plato_id: Optional[int] = None
+    client_nombre: str
     calorias: Optional[float] = None
+    ingredientes: Optional[List[dict]] = None
     created_at: datetime
     updated_at: datetime
 
@@ -44,7 +48,6 @@ class ResumenDiario(BaseModel):
 
 class ResumenSemanal(BaseModel):
     semana_inicio: date
-    familiar_id: int
-    familiar_nombre: str
-    objetivo_calorias: int
+    client_id: int
+    client_nombre: str
     dias: List[ResumenDiario]

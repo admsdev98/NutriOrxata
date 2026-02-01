@@ -33,18 +33,17 @@ class PlatoIngredienteResponse(BaseModel):
 class PlatoBase(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
-    momento_dia: str
+    momentos_dia: List[str]
 
 
 class PlatoCreate(PlatoBase):
     ingredientes: Optional[List[PlatoIngredienteCreate]] = []
-    familiares_ids: Optional[List[int]] = []
 
 
 class PlatoUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
-    momento_dia: Optional[str] = None
+    momentos_dia: Optional[List[str]] = None
 
 
 class PlatoResponse(PlatoBase):
@@ -63,4 +62,3 @@ class PlatoResponse(PlatoBase):
 
 class PlatoDetailResponse(PlatoResponse):
     ingredientes: List[PlatoIngredienteResponse] = []
-    familiares: List[dict] = []

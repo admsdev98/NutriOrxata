@@ -23,16 +23,25 @@ function calcularNutricion(ingredientes) {
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, peso: 0 });
 }
 
+function getPlatoMomentos(plato) {
+  if (!plato) return [];
+  if (Array.isArray(plato.momentos_dia) && plato.momentos_dia.length > 0) {
+    return plato.momentos_dia;
+  }
+  if (plato.momento_dia) return [plato.momento_dia];
+  return [];
+}
+
 function PlatoModal({ plato, onClose, onSave }) {
   const [form, setForm] = useState({
     nombre: plato?.nombre || '',
     descripcion: plato?.descripcion || '',
-    momento_dia: plato?.momento_dia || 'comida',
+    momentos_dia: plato?.momentos_dia?.length
+      ? plato.momentos_dia
+      : (plato?.momento_dia ? [plato.momento_dia] : ['comida']),
   });
   const [ingredientesPlato, setIngredientesPlato] = useState([]);
   const [ingredientesDisponibles, setIngredientesDisponibles] = useState([]);
-  const [familiares, setFamiliares] = useState([]);
-  const [familiaresSeleccionados, setFamiliaresSeleccionados] = useState([]);
   const [searchIng, setSearchIng] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -42,12 +51,10 @@ function PlatoModal({ plato, onClose, onSave }) {
 
   async function loadData() {
     try {
-      const [ings, fams] = await Promise.all([
+      const [ings] = await Promise.all([
         api.ingredientes.list(),
-        api.familiares.list(),
       ]);
       setIngredientesDisponibles(ings);
-      setFamiliares(fams);
 
       if (plato?.id) {
         const platoDetail = await api.platos.get(plato.id);
@@ -60,7 +67,6 @@ function PlatoModal({ plato, onClose, onSave }) {
           carbohidratos_por_100g: (pi.carbohidratos_aportados / pi.cantidad_gramos) * 100,
           grasas_por_100g: (pi.grasas_aportadas / pi.cantidad_gramos) * 100,
         })));
-        setFamiliaresSeleccionados(platoDetail.familiares.map(f => f.id));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -91,16 +97,22 @@ function PlatoModal({ plato, onClose, onSave }) {
     setIngredientesPlato(ingredientesPlato.filter((_, i) => i !== idx));
   }
 
-  function toggleFamiliar(id) {
-    if (familiaresSeleccionados.includes(id)) {
-      setFamiliaresSeleccionados(familiaresSeleccionados.filter(f => f !== id));
-    } else {
-      setFamiliaresSeleccionados([...familiaresSeleccionados, id]);
-    }
+  function toggleMomento(momento) {
+    setForm(prev => {
+      const exists = prev.momentos_dia.includes(momento);
+      const next = exists
+        ? prev.momentos_dia.filter(m => m !== momento)
+        : [...prev.momentos_dia, momento];
+      return { ...prev, momentos_dia: next };
+    });
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.momentos_dia.length) {
+      alert('Selecciona al menos un momento del dia');
+      return;
+    }
     if (ingredientesPlato.length === 0) {
       alert('Añade al menos un ingrediente');
       return;
@@ -114,7 +126,6 @@ function PlatoModal({ plato, onClose, onSave }) {
           ingrediente_id: i.id,
           cantidad_gramos: i.cantidad_gramos,
         })),
-        familiares_ids: familiaresSeleccionados,
       };
 
       if (plato?.id) {
@@ -171,36 +182,22 @@ function PlatoModal({ plato, onClose, onSave }) {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Etiqueta (momento del día)</label>
-                <div className="radio-group">
+                <label className="form-label">Momentos del dia</label>
+                <div className="checkbox-group">
                   {MOMENTOS.map(m => (
-                    <label key={m} className="radio-item">
+                    <label key={m} className="checkbox-item">
                       <input
-                        type="radio"
-                        name="momento"
-                        checked={form.momento_dia === m}
-                        onChange={() => setForm({ ...form, momento_dia: m })}
+                        type="checkbox"
+                        checked={form.momentos_dia.includes(m)}
+                        onChange={() => toggleMomento(m)}
                       />
                       {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
                     </label>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Asignar a familiares</label>
-              <div className="checkbox-group">
-                {familiares.map(f => (
-                  <label key={f.id} className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={familiaresSeleccionados.includes(f.id)}
-                      onChange={() => toggleFamiliar(f.id)}
-                    />
-                    {f.nombre}
-                  </label>
-                ))}
+                <p className="text-muted text-sm" style={{ marginTop: '6px' }}>
+                  Puedes marcar mas de un momento si el plato encaja en varios.
+                </p>
               </div>
             </div>
 
@@ -335,18 +332,28 @@ function PlatoModal({ plato, onClose, onSave }) {
 }
 
 function PlatoCard({ plato, onEdit, onDelete }) {
-  const momento = MOMENTOS_DISPLAY[plato.momento_dia] || { icon: '🍽️', label: plato.momento_dia };
+  const momentos = getPlatoMomentos(plato);
   
   return (
     <div className="card plato-card">
-      <div className="flex flex-between flex-center" style={{ marginBottom: '12px' }}>
-        <div>
-          <h3 style={{ marginBottom: '4px' }}>{plato.nombre}</h3>
-          <span className="badge badge-primary">
-            {momento.icon} {momento.label}
-          </span>
+      <div className="plato-card-header">
+        <div className="plato-card-main">
+          <h3 className="plato-card-title">{plato.nombre}</h3>
+          <div className="plato-card-meta">
+            {momentos.map(momento => {
+              const momentoInfo = MOMENTOS_DISPLAY[momento] || { icon: '🍽️', label: momento };
+              return (
+                <span key={momento} className="badge badge-primary">
+                  {momentoInfo.icon} {momentoInfo.label}
+                </span>
+              );
+            })}
+            {plato.descripcion && (
+              <span className="plato-card-desc">{plato.descripcion}</span>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="plato-card-actions">
           <button className="btn btn-secondary btn-sm" onClick={() => onEdit(plato)}>
             Editar
           </button>
@@ -355,32 +362,27 @@ function PlatoCard({ plato, onEdit, onDelete }) {
           </button>
         </div>
       </div>
-      {plato.descripcion && (
-        <p className="text-muted" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>
-          {plato.descripcion}
-        </p>
-      )}
-      <div className="nutrition-stats" style={{ padding: '16px', fontSize: '0.9rem' }}>
+      <div className="nutrition-stats plato-nutrition">
         <div className="stat-item">
-          <div className="stat-value" style={{ fontSize: '1.2rem' }}>
+          <div className="stat-value">
             {Math.round(plato.calorias_totales)}
           </div>
           <div className="stat-label">kcal</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ fontSize: '1.2rem' }}>
+          <div className="stat-value">
             {Math.round(plato.proteinas_totales)}g
           </div>
           <div className="stat-label">prot</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ fontSize: '1.2rem' }}>
+          <div className="stat-value">
             {Math.round(plato.carbohidratos_totales)}g
           </div>
           <div className="stat-label">carb</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ fontSize: '1.2rem' }}>
+          <div className="stat-value">
             {Math.round(plato.grasas_totales)}g
           </div>
           <div className="stat-label">grasas</div>
@@ -395,8 +397,8 @@ function Platos() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeMomento, setActiveMomento] = useState('todos');
 
   useEffect(() => {
     loadPlatos();
@@ -421,7 +423,6 @@ function Platos() {
   function handleEdit(item) {
     setEditingItem(item);
     setModalOpen(true);
-    setSearchOpen(false);
   }
 
   async function handleDelete(id) {
@@ -445,73 +446,104 @@ function Platos() {
   }
 
   const platosAgrupados = MOMENTOS.reduce((acc, momento) => {
-    acc[momento] = platos.filter(p => p.momento_dia === momento);
+    acc[momento] = platos.filter(p => getPlatoMomentos(p).includes(momento));
     return acc;
   }, {});
 
-  const searchResults = searchQuery
-    ? platos.filter(p => p.nombre.toLowerCase().includes(searchQuery.toLowerCase()))
-    : [];
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredPlatos = platos.filter(p => {
+    const matchesMomento = activeMomento === 'todos' || getPlatoMomentos(p).includes(activeMomento);
+    if (!matchesMomento) return false;
+    if (!normalizedQuery) return true;
+    const matchesNombre = p.nombre.toLowerCase().includes(normalizedQuery);
+    const matchesDesc = (p.descripcion || '').toLowerCase().includes(normalizedQuery);
+    return matchesNombre || matchesDesc;
+  });
+
+  const momentCounts = MOMENTOS.reduce((acc, momento) => {
+    acc[momento] = platosAgrupados[momento].length;
+    return acc;
+  }, {});
+
+  const activeMomentoInfo = MOMENTOS_DISPLAY[activeMomento];
+  const showGrouped = activeMomento === 'todos' && !normalizedQuery;
+  const momentosConPlatos = MOMENTOS.filter(m => platosAgrupados[m].length > 0).length;
+  const averageKcal = platos.length > 0
+    ? Math.round(platos.reduce((sum, p) => sum + (p.calorias_totales || 0), 0) / platos.length)
+    : 0;
 
   return (
-    <div>
-      <header className="page-header">
-        <div className="flex flex-between flex-center">
-          <div>
-            <h1 className="page-title">🍽️ Platos</h1>
-            <p className="page-subtitle">Crea platos con ingredientes y nutrición automática</p>
+    <div className="platos-page">
+      <header className="platos-hero">
+        <div className="platos-hero-main">
+          <p className="platos-eyebrow">Gestor de platos</p>
+          <h1 className="page-title">🍽️ Platos</h1>
+          <p className="page-subtitle">
+            Crea, organiza y reutiliza platos con ingredientes y nutricion automatica.
+          </p>
+        </div>
+        <div className="platos-hero-actions">
+          <button className="btn btn-primary" onClick={handleNew}>
+            + Crear plato
+          </button>
+        </div>
+        <div className="platos-hero-stats">
+          <div className="platos-stat">
+            <span className="platos-stat-value">{platos.length}</span>
+            <span className="platos-stat-label">platos totales</span>
           </div>
-          <div className="flex gap-2">
-            <button 
-              className={`btn ${searchOpen ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setSearchOpen(!searchOpen)}
-            >
-              🔍 Buscar
-            </button>
-            <button className="btn btn-primary" onClick={handleNew}>
-              + Crear plato
-            </button>
+          <div className="platos-stat">
+            <span className="platos-stat-value">{momentosConPlatos}</span>
+            <span className="platos-stat-label">momentos con platos</span>
+          </div>
+          <div className="platos-stat">
+            <span className="platos-stat-value">{averageKcal}</span>
+            <span className="platos-stat-label">kcal promedio</span>
           </div>
         </div>
       </header>
 
-      {searchOpen && (
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <div className="flex gap-2 flex-center">
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Buscar cualquier plato por nombre..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              autoFocus
-              style={{ flex: 1 }}
-            />
-            <button className="btn btn-secondary btn-sm" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
-              ✕ Cerrar
+      <section className="platos-toolbar card">
+        <div className="platos-search">
+          <span className="platos-search-icon">🔍</span>
+          <input
+            type="text"
+            className="form-input platos-search-input"
+            placeholder="Buscar por nombre o descripcion..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="platos-filters">
+          <button
+            className={`platos-filter-btn ${activeMomento === 'todos' ? 'active' : ''}`}
+            onClick={() => setActiveMomento('todos')}
+          >
+            Todos
+            <span className="platos-filter-count">{platos.length}</span>
+          </button>
+          {MOMENTOS.map(m => (
+            <button
+              key={m}
+              className={`platos-filter-btn ${activeMomento === m ? 'active' : ''}`}
+              onClick={() => setActiveMomento(m)}
+            >
+              {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
+              <span className="platos-filter-count">{momentCounts[m]}</span>
+            </button>
+          ))}
+        </div>
+        {(activeMomento !== 'todos' || normalizedQuery) && (
+          <div className="platos-toolbar-actions">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => { setActiveMomento('todos'); setSearchQuery(''); }}
+            >
+              Limpiar filtros
             </button>
           </div>
-          
-          {searchQuery && (
-            <div style={{ marginTop: '16px' }}>
-              {searchResults.length === 0 ? (
-                <p className="text-muted">No se encontraron platos con "{searchQuery}"</p>
-              ) : (
-                <div className="grid grid-2">
-                  {searchResults.map(plato => (
-                    <PlatoCard 
-                      key={plato.id} 
-                      plato={plato} 
-                      onEdit={handleEdit} 
-                      onDelete={handleDelete} 
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </section>
 
       {loading ? (
         <div className="loading"><div className="spinner"></div></div>
@@ -520,47 +552,81 @@ function Platos() {
           <div className="empty-state-icon">🍽️</div>
           <h3 className="empty-state-title">No hay platos</h3>
           <p>Crea tu primer plato para empezar</p>
+          <button className="btn btn-primary" onClick={handleNew} style={{ marginTop: '16px' }}>
+            + Crear plato
+          </button>
         </div>
       ) : (
-        <div>
-          {MOMENTOS.map(momento => {
-            const platosDelMomento = platosAgrupados[momento];
-            if (platosDelMomento.length === 0) return null;
-            
-            const momentoInfo = MOMENTOS_DISPLAY[momento];
-            
-            return (
-              <div key={momento} style={{ marginBottom: '32px' }}>
-                <h2 style={{ 
-                  marginBottom: '16px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  color: 'var(--text-primary)'
-                }}>
-                  <span style={{ fontSize: '1.5rem' }}>{momentoInfo.icon}</span>
-                  {momentoInfo.label}
-                  <span style={{ 
-                    fontSize: '0.9rem', 
-                    color: 'var(--text-muted)', 
-                    fontWeight: 'normal' 
-                  }}>
-                    ({platosDelMomento.length} {platosDelMomento.length === 1 ? 'plato' : 'platos'})
+        <div className="platos-sections">
+          {showGrouped ? (
+            MOMENTOS.map(momento => {
+              const platosDelMomento = platosAgrupados[momento];
+              if (platosDelMomento.length === 0) return null;
+
+              const momentoInfo = MOMENTOS_DISPLAY[momento];
+
+              return (
+                <section key={momento} className="platos-section">
+                  <div className="platos-section-header">
+                    <div>
+                      <h2 className="platos-section-title">
+                        <span className="platos-section-icon">{momentoInfo.icon}</span>
+                        {momentoInfo.label}
+                      </h2>
+                      <p className="platos-section-sub">
+                        {platosDelMomento.length} {platosDelMomento.length === 1 ? 'plato' : 'platos'} disponibles
+                      </p>
+                    </div>
+                    <span className="platos-section-pill">
+                      {momentoInfo.icon} {momentoInfo.label}
+                    </span>
+                  </div>
+                  <div className="platos-grid">
+                    {platosDelMomento.map(plato => (
+                      <PlatoCard
+                        key={plato.id}
+                        plato={plato}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })
+          ) : (
+            <section className="platos-section">
+              <div className="platos-section-header">
+                <div>
+                  <h2 className="platos-section-title">Resultados</h2>
+                  <p className="platos-section-sub">
+                    {filteredPlatos.length} {filteredPlatos.length === 1 ? 'plato' : 'platos'} encontrados
+                  </p>
+                </div>
+                {activeMomentoInfo && (
+                  <span className="platos-section-pill">
+                    {activeMomentoInfo.icon} {activeMomentoInfo.label}
                   </span>
-                </h2>
-                <div className="grid grid-2">
-                  {platosDelMomento.map(plato => (
-                    <PlatoCard 
-                      key={plato.id} 
-                      plato={plato} 
-                      onEdit={handleEdit} 
-                      onDelete={handleDelete} 
+                )}
+              </div>
+              {filteredPlatos.length === 0 ? (
+                <div className="empty-state compact">
+                  <p className="text-muted">No hay resultados con esos filtros.</p>
+                </div>
+              ) : (
+                <div className="platos-grid">
+                  {filteredPlatos.map(plato => (
+                    <PlatoCard
+                      key={plato.id}
+                      plato={plato}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
                     />
                   ))}
                 </div>
-              </div>
-            );
-          })}
+              )}
+            </section>
+          )}
         </div>
       )}
 

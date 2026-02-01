@@ -58,7 +58,7 @@ function Login() {
             borderRadius: 'var(--border-radius)',
             padding: '12px 16px',
             marginBottom: '24px',
-            color: 'var(--accent-danger)',
+            color: 'var(--accent-error)',
             fontSize: '0.9rem',
           }}>
             ⚠️ {error}

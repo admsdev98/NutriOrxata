@@ -44,6 +44,8 @@ async def get_me(user: Usuario = Depends(require_auth)):
     return UsuarioResponse.model_validate(user)
 
 
+from app.schemas.auth import LoginRequest, TokenResponse, UsuarioResponse, UsuarioCreate, UsuarioUpdate
+
 @router.post("/register", response_model=UsuarioResponse)
 async def register_user(
     request: UsuarioCreate,
@@ -57,13 +59,13 @@ async def register_user(
             detail="El email ya está registrado"
         )
     
-    user = Usuario(
-        nombre=request.nombre,
-        email=request.email,
-        password_hash=get_password_hash(request.password),
-        rol=request.rol,
-        familiar_id=request.familiar_id
-    )
+    # Use model_dump or dict to unpack all fields including optional ones
+    user_data = request.model_dump() if hasattr(request, 'model_dump') else request.dict()
+    # Hash password
+    user_data['password_hash'] = get_password_hash(user_data.pop('password'))
+    
+    user = Usuario(**user_data)
+    
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -71,13 +73,68 @@ async def register_user(
     return UsuarioResponse.model_validate(user)
 
 
-@router.get("/usuarios", response_model=list[UsuarioResponse])
-async def list_usuarios(
+@router.put("/usuarios/{user_id}", response_model=UsuarioResponse)
+async def update_usuario(
+    user_id: int,
+    request: UsuarioUpdate,
     db: Session = Depends(get_db),
     admin: Usuario = Depends(require_admin)
 ):
-    usuarios = db.query(Usuario).order_by(Usuario.nombre).all()
-    return [UsuarioResponse.model_validate(u) for u in usuarios]
+    user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    # Update fields
+    update_data = request.model_dump(exclude_unset=True) if hasattr(request, 'model_dump') else request.dict(exclude_unset=True)
+    
+    if 'password' in update_data and update_data['password']:
+         update_data['password_hash'] = get_password_hash(update_data.pop('password'))
+    
+    for key, value in update_data.items():
+        setattr(user, key, value)
+        
+    db.commit()
+    db.refresh(user)
+    
+    return UsuarioResponse.model_validate(user)
+
+
+@router.get("/usuarios")
+async def list_usuarios(
+    skip: int = 0,
+    limit: int = 100,
+    rol: str | None = None,
+    search: str | None = None,
+    trabajador_id: int | None = None,
+    db: Session = Depends(get_db),
+    admin: Usuario = Depends(require_admin)
+):
+    query = db.query(Usuario)
+    
+    if rol:
+        if rol == 'cliente':
+            query = query.filter(Usuario.rol.in_(['cliente', 'usuario']))
+        else:
+            query = query.filter(Usuario.rol == rol)
+        
+    if search:
+        search_filter = f"%{search}%"
+        # Search by name or email
+        query = query.filter(
+            (Usuario.nombre.ilike(search_filter)) | 
+            (Usuario.email.ilike(search_filter))
+        )
+
+    if trabajador_id:
+        query = query.filter(Usuario.trabajador_id == trabajador_id)
+        
+    total = query.count()
+    usuarios = query.order_by(Usuario.nombre).offset(skip).limit(limit).all()
+    
+    return {
+        "items": [UsuarioResponse.model_validate(u) for u in usuarios],
+        "total": total
+    }
 
 
 @router.delete("/usuarios/{user_id}", status_code=204)

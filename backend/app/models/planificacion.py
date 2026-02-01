@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
+from app.models.usuario import Usuario
 
 
 class DiaSemana(str, enum.Enum):
@@ -23,10 +24,12 @@ class PlanificacionSemanal(Base):
     dia = Column(String(20), nullable=False)
     momento = Column(String(20), nullable=False)
     plato_id = Column(Integer, ForeignKey("platos.id", ondelete="SET NULL"))
-    familiar_id = Column(Integer, ForeignKey("familiares.id", ondelete="CASCADE"), nullable=False)
+    cliente_plato_id = Column(Integer, ForeignKey("cliente_platos.id", ondelete="SET NULL"))
+    client_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
     notas = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     plato = relationship("Plato")
-    familiar = relationship("Familiar")
+    cliente_plato = relationship("ClientePlato")
+    client = relationship("Usuario")

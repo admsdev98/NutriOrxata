@@ -26,22 +26,9 @@ CREATE TYPE momento_dia AS ENUM ('desayuno', 'almuerzo', 'comida', 'merienda', '
 CREATE TYPE dia_semana AS ENUM ('lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo');
 
 -- Roles de usuario
-CREATE TYPE rol_usuario AS ENUM ('admin', 'usuario');
+CREATE TYPE rol_usuario AS ENUM ('admin', 'cliente');
 
--- Tabla de Usuarios
-CREATE TABLE usuarios (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(200) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    rol VARCHAR(20) NOT NULL DEFAULT 'usuario',
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
--- Índice para búsqueda por email
-CREATE INDEX idx_usuarios_email ON usuarios(email);
 
 -- Tabla de Ingredientes (productos de Mercadona)
 CREATE TABLE ingredientes (
@@ -82,12 +69,43 @@ CREATE TABLE familiares (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabla de Usuarios
+CREATE TABLE usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100),
+    email VARCHAR(200) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(20) NOT NULL DEFAULT 'cliente',
+    trabajador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    activo BOOLEAN DEFAULT true,
+    edad INTEGER,
+    altura INTEGER,
+    peso DECIMAL(6,2),
+    sexo VARCHAR(10),
+    grasa_corporal DECIMAL(5,2),
+    nivel_actividad VARCHAR(50),
+    objetivo VARCHAR(50),
+    calorias_mantenimiento DECIMAL(10,2),
+    calorias_objetivo DECIMAL(10,2),
+    distribucion_desayuno DECIMAL(5,2),
+    distribucion_almuerzo DECIMAL(5,2),
+    distribucion_comida DECIMAL(5,2),
+    distribucion_merienda DECIMAL(5,2),
+    distribucion_cena DECIMAL(5,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índice para búsqueda por email
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+
 -- Tabla de Platos
 CREATE TABLE platos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
     descripcion TEXT,
-    momento_dia momento_dia NOT NULL,
+    momentos_dia momento_dia[] NOT NULL,
     calorias_totales DECIMAL(10,2) NOT NULL DEFAULT 0,
     proteinas_totales DECIMAL(10,2) DEFAULT 0,
     carbohidratos_totales DECIMAL(10,2) DEFAULT 0,
@@ -112,13 +130,24 @@ CREATE TABLE plato_ingredientes (
     UNIQUE(plato_id, ingrediente_id)
 );
 
--- Tabla de relación: platos asignados a familiares
-CREATE TABLE plato_familiares (
+-- Tabla de platos asociados a clientes
+CREATE TABLE cliente_platos (
     id SERIAL PRIMARY KEY,
+    client_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     plato_id INTEGER REFERENCES platos(id) ON DELETE CASCADE,
-    familiar_id INTEGER REFERENCES familiares(id) ON DELETE CASCADE,
+    momentos_dia momento_dia[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(plato_id, familiar_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Ingredientes personalizados por cliente y plato
+CREATE TABLE cliente_plato_ingredientes (
+    id SERIAL PRIMARY KEY,
+    cliente_plato_id INTEGER REFERENCES cliente_platos(id) ON DELETE CASCADE,
+    ingrediente_id INTEGER REFERENCES ingredientes(id) ON DELETE CASCADE,
+    cantidad_gramos DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(cliente_plato_id, ingrediente_id)
 );
 
 -- Tabla de planificación semanal
@@ -128,11 +157,12 @@ CREATE TABLE planificacion_semanal (
     dia dia_semana NOT NULL,
     momento momento_dia NOT NULL,
     plato_id INTEGER REFERENCES platos(id) ON DELETE SET NULL,
-    familiar_id INTEGER REFERENCES familiares(id) ON DELETE CASCADE,
+    cliente_plato_id INTEGER REFERENCES cliente_platos(id) ON DELETE SET NULL,
+    client_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     notas TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(semana_inicio, dia, momento, familiar_id)
+    UNIQUE(semana_inicio, dia, momento, client_id)
 );
 
 -- Función para calcular aportes de un ingrediente en un plato
@@ -227,8 +257,8 @@ CREATE TRIGGER update_planificacion_updated_at BEFORE UPDATE ON planificacion_se
 CREATE INDEX idx_ingredientes_nombre ON ingredientes(nombre);
 CREATE INDEX idx_ingredientes_categoria ON ingredientes(categoria);
 CREATE INDEX idx_platos_nombre ON platos(nombre);
-CREATE INDEX idx_platos_momento ON platos(momento_dia);
-CREATE INDEX idx_planificacion_semana ON planificacion_semanal(semana_inicio, familiar_id);
+CREATE INDEX idx_platos_momentos ON platos USING GIN (momentos_dia);
+CREATE INDEX idx_planificacion_semana ON planificacion_semanal(semana_inicio, client_id);
 
 -- Seed Data: Ingredientes de Mercadona
 INSERT INTO ingredientes (nombre, categoria, calorias_por_100g, proteinas_por_100g, carbohidratos_por_100g, grasas_por_100g, fibra_por_100g) VALUES
@@ -297,3 +327,7 @@ INSERT INTO familiares (nombre, edad, objetivo_calorias) VALUES
 ('Pedro', 42, 2200),
 ('María', 38, 1800),
 ('Lucas', 12, 2000);
+
+-- Usuario Admin Inicial
+INSERT INTO usuarios (nombre, email, password_hash, rol, activo) VALUES
+('Adam Admin', 'adam_admin@nutriorxata.com', '$2b$12$Bw/nndNqwezTYd10fO3KIupfmBICRszhAS9R3yJbngaKaFeNFtY1W', 'admin', true);
