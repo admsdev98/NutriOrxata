@@ -330,4 +330,11 @@ INSERT INTO familiares (nombre, edad, objetivo_calorias) VALUES
 
 -- Usuario Admin Inicial
 INSERT INTO usuarios (nombre, email, password_hash, rol, activo) VALUES
-('Adam Admin', 'adam_admin@nutriorxata.com', '$2b$12$Bw/nndNqwezTYd10fO3KIupfmBICRszhAS9R3yJbngaKaFeNFtY1W', 'admin', true);
+('Adam Admin', 'adam_admin@nutriorxata.com', '$2b$12$Pf4x2s/SuwhliObaDWK.uujS27aNupFMnrFCb2sBR0OdVs0.eqjaa', 'admin', true)
+ON CONFLICT (email) DO UPDATE
+SET
+    nombre = EXCLUDED.nombre,
+    password_hash = EXCLUDED.password_hash,
+    rol = EXCLUDED.rol,
+    activo = EXCLUDED.activo,
+    updated_at = CURRENT_TIMESTAMP;

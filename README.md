@@ -27,13 +27,15 @@ NutriOrxata/
 ├── backend/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── app/
-│       ├── main.py         # Punto de entrada FastAPI
-│       ├── config.py       # Configuración
-│       ├── database.py     # Conexión a PostgreSQL
-│       ├── models/         # Modelos SQLAlchemy
-│       ├── schemas/        # Schemas Pydantic
-│       └── routers/        # Endpoints API
+│   ├── scripts/          # Utilidades y migraciones
+│   └── src/
+│       └── app/
+│           ├── main.py         # Punto de entrada FastAPI
+│           ├── config.py       # Configuración
+│           ├── database.py     # Conexión a PostgreSQL
+│           ├── models/         # Modelos SQLAlchemy
+│           ├── schemas/        # Schemas Pydantic
+│           └── routers/        # Endpoints API
 ├── frontend/
 │   ├── Dockerfile
 │   ├── package.json
@@ -173,7 +175,7 @@ La respuesta incluirá los totales calculados automáticamente:
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+PYTHONPATH=src uvicorn app.main:app --reload
 ```
 
 ### Frontend (modo desarrollo)
@@ -189,6 +191,12 @@ npm run dev
 ### Backend
 - `DATABASE_URL`: URL de conexión a PostgreSQL
 - `CORS_ORIGINS`: Orígenes permitidos para CORS
+- `SECRET_KEY`: Clave para firmar JWT (obligatoria en producción)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Duración del token (minutos)
+- `JWT_ISSUER`: Issuer esperado en JWT (opcional)
+- `JWT_AUDIENCE`: Audience esperada en JWT (opcional)
+- `BCRYPT_ROUNDS`: Coste de bcrypt (default: 12)
+- `ENVIRONMENT`: `development` o `production`
 
 ### Frontend
 - `VITE_API_URL`: URL del backend (default: http://localhost:8000)
