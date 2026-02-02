@@ -10,6 +10,27 @@ const MOMENTOS_DISPLAY = {
   cena: { icon: '🌙', label: 'Cena' },
 };
 
+function normalizeText(value) {
+  return (value || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getSearchTokens(value) {
+  return normalizeText(value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function matchesTokens(text, tokens) {
+  if (!tokens.length) return true;
+  const normalized = normalizeText(text);
+  return tokens.every(token => normalized.includes(token));
+}
+
 function calcularNutricion(ingredientes) {
   return ingredientes.reduce((total, ing) => {
     const factor = ing.cantidad_gramos / 100;
@@ -142,10 +163,12 @@ function PlatoModal({ plato, onClose, onSave }) {
   }
 
   const nutricion = calcularNutricion(ingredientesPlato);
-  const filteredIngs = ingredientesDisponibles.filter(
-    i => i.nombre.toLowerCase().includes(searchIng.toLowerCase()) &&
-         !ingredientesPlato.find(ip => ip.id === i.id)
-  ).slice(0, 8);
+  const ingredientTokens = getSearchTokens(searchIng);
+  const filteredIngs = ingredientesDisponibles.filter(i => {
+    if (!ingredientTokens.length) return false;
+    if (ingredientesPlato.find(ip => ip.id === i.id)) return false;
+    return matchesTokens(i.nombre, ingredientTokens);
+  }).slice(0, 8);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -450,14 +473,13 @@ function Platos() {
     return acc;
   }, {});
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchTokens = getSearchTokens(searchQuery);
   const filteredPlatos = platos.filter(p => {
     const matchesMomento = activeMomento === 'todos' || getPlatoMomentos(p).includes(activeMomento);
     if (!matchesMomento) return false;
-    if (!normalizedQuery) return true;
-    const matchesNombre = p.nombre.toLowerCase().includes(normalizedQuery);
-    const matchesDesc = (p.descripcion || '').toLowerCase().includes(normalizedQuery);
-    return matchesNombre || matchesDesc;
+    if (!searchTokens.length) return true;
+    const combined = `${p.nombre || ''} ${p.descripcion || ''}`;
+    return matchesTokens(combined, searchTokens);
   });
 
   const momentCounts = MOMENTOS.reduce((acc, momento) => {
@@ -466,7 +488,7 @@ function Platos() {
   }, {});
 
   const activeMomentoInfo = MOMENTOS_DISPLAY[activeMomento];
-  const showGrouped = activeMomento === 'todos' && !normalizedQuery;
+  const showGrouped = activeMomento === 'todos' && searchTokens.length === 0;
   const momentosConPlatos = MOMENTOS.filter(m => platosAgrupados[m].length > 0).length;
   const averageKcal = platos.length > 0
     ? Math.round(platos.reduce((sum, p) => sum + (p.calorias_totales || 0), 0) / platos.length)
@@ -533,7 +555,7 @@ function Platos() {
             </button>
           ))}
         </div>
-        {(activeMomento !== 'todos' || normalizedQuery) && (
+        {(activeMomento !== 'todos' || searchTokens.length > 0) && (
           <div className="platos-toolbar-actions">
             <button
               className="btn btn-ghost btn-sm"

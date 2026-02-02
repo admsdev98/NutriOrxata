@@ -22,7 +22,9 @@ def list_ingredientes(
     if categoria:
         query = query.filter(Ingrediente.categoria == categoria)
     if q:
-        query = query.filter(Ingrediente.nombre.ilike(f"%{q}%"))
+        tokens = [token for token in q.strip().split() if token]
+        for token in tokens:
+            query = query.filter(Ingrediente.nombre.ilike(f"%{token}%"))
     return query.order_by(Ingrediente.categoria, Ingrediente.nombre).offset(skip).limit(limit).all()
 
 

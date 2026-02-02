@@ -198,11 +198,17 @@ ingredientes_data = [
     {"nombre": "Garbanzos Cocidos (Bote)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 100, "proteinas": 6, "carbohidratos": 14, "grasas": 2},
     {"nombre": "Alubias Blancas/Pintas (Secas)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 330, "proteinas": 23, "carbohidratos": 45, "grasas": 1.5},
     {"nombre": "Alubias Cocidas (Bote)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 95, "proteinas": 6.5, "carbohidratos": 13, "grasas": 0.6},
+    {"nombre": "Alubias Rojas Cocidas (Bote)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 98, "proteinas": 6.8, "carbohidratos": 13.5, "grasas": 0.5},
+    {"nombre": "Judías Negras Cocidas (Bote)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 95, "proteinas": 7, "carbohidratos": 13, "grasas": 0.4},
+    {"nombre": "Edamame (Congelado)", "categoria": CategoriaIngrediente.LEGUMBRES, "supermercado": "Blanca", "calorias": 120, "proteinas": 11, "carbohidratos": 9, "grasas": 5},
 
     # --- CEREALES, PAN Y PASTAS ---
     {"nombre": "Arroz Redondo (Crudo)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 350, "proteinas": 7, "carbohidratos": 79, "grasas": 0.5},
     {"nombre": "Arroz Basmati (Crudo)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 355, "proteinas": 8.5, "carbohidratos": 78, "grasas": 0.8},
     {"nombre": "Arroz Integral (Crudo)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 340, "proteinas": 7.5, "carbohidratos": 72, "grasas": 2.5},
+    {"nombre": "Quinoa (Cruda)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 368, "proteinas": 14, "carbohidratos": 64, "grasas": 6.1},
+    {"nombre": "Cuscús (Crudo)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 376, "proteinas": 12.8, "carbohidratos": 77, "grasas": 0.6},
+    {"nombre": "Bulgur (Crudo)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 342, "proteinas": 12.3, "carbohidratos": 75.9, "grasas": 1.3},
     {"nombre": "Pasta (Trigo normal) Cruda", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 360, "proteinas": 12, "carbohidratos": 74, "grasas": 1.5},
     {"nombre": "Pasta Integral (Cruda)", "categoria": CategoriaIngrediente.PASTA_ARROZ, "supermercado": "Blanca", "calorias": 340, "proteinas": 13, "carbohidratos": 65, "grasas": 2},
     {"nombre": "Copos de Avena", "categoria": CategoriaIngrediente.CEREALES, "supermercado": "Blanca", "calorias": 375, "proteinas": 13.5, "carbohidratos": 60, "grasas": 7},

@@ -94,139 +94,247 @@ def create_plato(db: Session, nombre: str, momentos: list, descripcion: str, ing
     db.commit()
     print(f"  Plato creado con {len(ingredientes_data)} ingredientes.")
 
+
+def recalc_plato_totals(db: Session, plato: Plato) -> None:
+    total_calorias = Decimal(0)
+    total_proteinas = Decimal(0)
+    total_carbohidratos = Decimal(0)
+    total_grasas = Decimal(0)
+    total_fibra = Decimal(0)
+    total_peso = Decimal(0)
+
+    for pi in plato.ingredientes:
+        ing = db.query(Ingrediente).filter(Ingrediente.id == pi.ingrediente_id).first()
+        if not ing:
+            continue
+        ratio = Decimal(pi.cantidad_gramos) / Decimal(100)
+        cal = ing.calorias_por_100g * ratio
+        prot = ing.proteinas_por_100g * ratio
+        carb = ing.carbohidratos_por_100g * ratio
+        gras = ing.grasas_por_100g * ratio
+        fibra = (ing.fibra_por_100g or 0) * ratio
+
+        pi.calorias_aportadas = cal
+        pi.proteinas_aportadas = prot
+        pi.carbohidratos_aportados = carb
+        pi.grasas_aportadas = gras
+
+        total_calorias += cal
+        total_proteinas += prot
+        total_carbohidratos += carb
+        total_grasas += gras
+        total_fibra += Decimal(str(fibra))
+        total_peso += Decimal(pi.cantidad_gramos)
+
+    plato.calorias_totales = total_calorias
+    plato.proteinas_totales = total_proteinas
+    plato.carbohidratos_totales = total_carbohidratos
+    plato.grasas_totales = total_grasas
+    plato.fibra_totales = total_fibra
+    plato.peso_total_gramos = total_peso
+
+    db.commit()
+
+
+def ensure_ingrediente_in_plato(db: Session, plato_nombre: str, ingrediente_nombre: str, gramos: int) -> None:
+    plato = db.query(Plato).filter(Plato.nombre == plato_nombre).first()
+    if not plato:
+        return
+    ingrediente = db.query(Ingrediente).filter(Ingrediente.nombre == ingrediente_nombre).first()
+    if not ingrediente:
+        print(f"  ERROR: Ingrediente no encontrado {ingrediente_nombre}, saltando.")
+        return
+    existing = db.query(PlatoIngrediente).filter(
+        PlatoIngrediente.plato_id == plato.id,
+        PlatoIngrediente.ingrediente_id == ingrediente.id,
+    ).first()
+    if existing:
+        return
+
+    plato_ing = PlatoIngrediente(
+        plato_id=plato.id,
+        ingrediente_id=ingrediente.id,
+        cantidad_gramos=gramos,
+    )
+    db.add(plato_ing)
+    db.commit()
+    db.refresh(plato)
+    recalc_plato_totals(db, plato)
+
 def main():
     db = SessionLocal()
 
-    # 1. Ensure basic Ingredients exist
-    # (Nombre, Categoria, Calorias, Proteinas, Carbohidratos, Grasas) per 100g
-    ingredients_to_seed = {
-        "Pan Integral": {"categoria": CategoriaIngrediente.PAN, "calorias_por_100g": 250, "proteinas_por_100g": 9, "carbohidratos_por_100g": 45, "grasas_por_100g": 2},
-        "Tomate": {"categoria": CategoriaIngrediente.VERDURAS, "calorias_por_100g": 18, "proteinas_por_100g": 1, "carbohidratos_por_100g": 4, "grasas_por_100g": 0.2},
-        "Aceite de Olivia": {"categoria": CategoriaIngrediente.ACEITES, "calorias_por_100g": 884, "proteinas_por_100g": 0, "carbohidratos_por_100g": 0, "grasas_por_100g": 100},
-        "Avena": {"categoria": CategoriaIngrediente.CEREALES, "calorias_por_100g": 389, "proteinas_por_100g": 16, "carbohidratos_por_100g": 66, "grasas_por_100g": 7},
-        "Leche Semidesnatada": {"categoria": CategoriaIngrediente.LACTEOS, "calorias_por_100g": 46, "proteinas_por_100g": 3.4, "carbohidratos_por_100g": 4.8, "grasas_por_100g": 1.6},
-        "Huevo": {"categoria": CategoriaIngrediente.HUEVOS, "calorias_por_100g": 155, "proteinas_por_100g": 13, "carbohidratos_por_100g": 1, "grasas_por_100g": 11},
-        "Arroz Integral": {"categoria": CategoriaIngrediente.PASTA_ARROZ, "calorias_por_100g": 111, "proteinas_por_100g": 2.6, "carbohidratos_por_100g": 23, "grasas_por_100g": 0.9},
-        "Pollo (Pechuga)": {"categoria": CategoriaIngrediente.CARNES, "calorias_por_100g": 165, "proteinas_por_100g": 31, "carbohidratos_por_100g": 0, "grasas_por_100g": 3.6},
-        "Mezcla de Verduras": {"categoria": CategoriaIngrediente.VERDURAS, "calorias_por_100g": 40, "proteinas_por_100g": 2, "carbohidratos_por_100g": 6, "grasas_por_100g": 0.5},
-        "Lentejas (cocidas)": {"categoria": CategoriaIngrediente.LEGUMBRES, "calorias_por_100g": 116, "proteinas_por_100g": 9, "carbohidratos_por_100g": 20, "grasas_por_100g": 0.4},
-        "Yogur Natural": {"categoria": CategoriaIngrediente.LACTEOS, "calorias_por_100g": 60, "proteinas_por_100g": 4, "carbohidratos_por_100g": 5, "grasas_por_100g": 3},
-        "Nueces": {"categoria": CategoriaIngrediente.OTROS, "calorias_por_100g": 654, "proteinas_por_100g": 15, "carbohidratos_por_100g": 14, "grasas_por_100g": 65},
-        "Manzana": {"categoria": CategoriaIngrediente.FRUTAS, "calorias_por_100g": 52, "proteinas_por_100g": 0.3, "carbohidratos_por_100g": 14, "grasas_por_100g": 0.2},
-        "Pavo (Fiambre)": {"categoria": CategoriaIngrediente.CARNES, "calorias_por_100g": 105, "proteinas_por_100g": 18, "carbohidratos_por_100g": 2, "grasas_por_100g": 2},
-        "Merluza": {"categoria": CategoriaIngrediente.PESCADOS, "calorias_por_100g": 78, "proteinas_por_100g": 17, "carbohidratos_por_100g": 0, "grasas_por_100g": 1.2},
-        "Patata": {"categoria": CategoriaIngrediente.VERDURAS, "calorias_por_100g": 77, "proteinas_por_100g": 2, "carbohidratos_por_100g": 17, "grasas_por_100g": 0.1},
-        "Calabacin": {"categoria": CategoriaIngrediente.VERDURAS, "calorias_por_100g": 17, "proteinas_por_100g": 1.2, "carbohidratos_por_100g": 3, "grasas_por_100g": 0.3},
-    }
-
-    for name, data in ingredients_to_seed.items():
-        get_or_create_ingrediente(db, name, data)
-
-    # 2. Create Dishes
     dishes = [
         # DESAYUNO
         {
             "nombre": "Tostadas con tomate y aceite",
             "momento": [MomentoDia.DESAYUNO],
-            "descripcion": "Desayuno clásico mediterráneo.",
-            "ingredientes": [("Pan Integral", 60), ("Tomate", 30), ("Aceite de Olivia", 10)]
+            "descripcion": "Desayuno clásico mediterráneo y económico.",
+            "ingredientes": [("Pan de Molde Integral 100%", 60), ("Tomate (Ensalada)", 40), ("Aceite de Oliva Virgen Extra", 10)]
         },
         {
-            "nombre": "Porridge de avena",
+            "nombre": "Avena con leche y plátano",
             "momento": [MomentoDia.DESAYUNO],
-            "descripcion": "Avena cocida con leche.",
-            "ingredientes": [("Avena", 40), ("Leche Semidesnatada", 200)]
+            "descripcion": "Avena cocida con leche y fruta.",
+            "ingredientes": [("Copos de Avena", 40), ("Leche Desnatada", 200), ("Plátano", 100)]
         },
         {
-            "nombre": "Huevos revueltos sencillos",
+            "nombre": "Yogur griego con frutos rojos y nueces",
             "momento": [MomentoDia.DESAYUNO],
-            "descripcion": "Dos huevos revueltos.",
-            "ingredientes": [("Huevo", 120)]
+            "descripcion": "Desayuno frío con grasas saludables.",
+            "ingredientes": [("Yogur Griego Natural", 170), ("Arándanos", 80), ("Nueces (Peladas)", 15)]
         },
         {
-            "nombre": "Yogur con manzana y nueces",
+            "nombre": "Tortilla de claras con espinacas",
             "momento": [MomentoDia.DESAYUNO],
-            "descripcion": "Desayuno frio con fruta y frutos secos.",
-            "ingredientes": [("Yogur Natural", 125), ("Manzana", 150), ("Nueces", 15)]
+            "descripcion": "Proteína rápida con verduras.",
+            "ingredientes": [("Claras de Huevo (Bote)", 200), ("Espinacas (Frescas)", 80), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Tostada de pavo y queso fresco",
+            "momento": [MomentoDia.DESAYUNO],
+            "descripcion": "Salado ligero con proteína.",
+            "ingredientes": [("Pan de Molde Integral 100%", 60), ("Pechuga de Pavo (Fiambre 90%+ carne)", 60), ("Queso Fresco Burgos 0%", 60)]
+        },
+
+        # ALMUERZO
+        {
+            "nombre": "Bocadillo integral de atún",
+            "momento": [MomentoDia.ALMUERZO],
+            "descripcion": "Media mañana con proteína y carbohidratos.",
+            "ingredientes": [("Pan Integral", 80), ("Atún Claro al Natural", 80), ("Tomate (Ensalada)", 60)]
+        },
+        {
+            "nombre": "Queso fresco batido con manzana",
+            "momento": [MomentoDia.ALMUERZO],
+            "descripcion": "Rápido, ligero y barato.",
+            "ingredientes": [("Queso Fresco Batido 0%", 200), ("Manzana", 150)]
+        },
+        {
+            "nombre": "Yogur proteico con plátano",
+            "momento": [MomentoDia.ALMUERZO],
+            "descripcion": "Proteína rápida con fruta.",
+            "ingredientes": [("Yogur Proteínas (+Proteinas)", 200), ("Plátano", 120)]
+        },
+        {
+            "nombre": "Tortitas de arroz con jamón serrano",
+            "momento": [MomentoDia.ALMUERZO],
+            "descripcion": "Snack salado con proteína.",
+            "ingredientes": [("Tortitas de Arroz", 40), ("Jamón Serrano (Reserva)", 40)]
+        },
+        {
+            "nombre": "Kéfir con fresas",
+            "momento": [MomentoDia.ALMUERZO],
+            "descripcion": "Opción fresca y fácil.",
+            "ingredientes": [("Kéfir", 250), ("Fresas / Fresones", 120)]
         },
         
         # COMIDA (LUNCH)
         {
-            "nombre": "Arroz con verduras",
+            "nombre": "Pollo con arroz basmati y brócoli",
             "momento": [MomentoDia.COMIDA],
-            "descripcion": "Arroz integral salteado con verduras variadas.",
-            "ingredientes": [("Arroz Integral", 80), ("Mezcla de Verduras", 150), ("Aceite de Olivia", 5)]
+            "descripcion": "Plato clásico y equilibrado.",
+            "ingredientes": [("Pechuga de Pollo (Filetes)", 160), ("Arroz Basmati (Crudo)", 80), ("Brócoli", 150), ("Aceite de Oliva Virgen Extra", 5)]
         },
         {
-            "nombre": "Pollo a la plancha con patatas",
+            "nombre": "Salmón con quinoa y espárragos",
             "momento": [MomentoDia.COMIDA],
-            "descripcion": "Pechuga de pollo a la plancha con guarnición de patata cocida.",
-            "ingredientes": [("Pollo (Pechuga)", 150), ("Patata", 200), ("Aceite de Olivia", 5)]
+            "descripcion": "Pescado graso con carbohidratos de calidad.",
+            "ingredientes": [("Salmón (Lomos)", 160), ("Quinoa (Cruda)", 70), ("Espárragos Verdes", 150), ("Aceite de Oliva Virgen Extra", 5)]
         },
         {
-            "nombre": "Lentejas estofadas",
+            "nombre": "Ensalada de garbanzos con atún",
             "momento": [MomentoDia.COMIDA],
-            "descripcion": "Plato de cuchara nutritivo.",
-            "ingredientes": [("Lentejas (cocidas)", 250), ("Mezcla de Verduras", 100), ("Patata", 80)]
+            "descripcion": "Legumbre con proteína y grasas saludables.",
+            "ingredientes": [("Garbanzos Cocidos (Bote)", 220), ("Atún Claro al Natural", 80), ("Tomate (Ensalada)", 100), ("Cebolla", 40), ("Aceite de Oliva Virgen Extra", 5)]
         },
         {
-            "nombre": "Pollo con verduras y arroz",
+            "nombre": "Lentejas con verduras y arroz integral",
             "momento": [MomentoDia.COMIDA],
-            "descripcion": "Pechuga de pollo con arroz integral y verduras.",
-            "ingredientes": [("Pollo (Pechuga)", 140), ("Arroz Integral", 70), ("Mezcla de Verduras", 120), ("Aceite de Olivia", 5)]
+            "descripcion": "Plato completo con carbohidratos y proteína vegetal.",
+            "ingredientes": [("Lentejas Cocidas (Bote)", 240), ("Arroz Integral (Crudo)", 60), ("Zanahoria", 60), ("Pimiento Rojo", 60), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Pavo con boniato y ensalada",
+            "momento": [MomentoDia.COMIDA],
+            "descripcion": "Plato alto en proteína con carbohidrato complejo.",
+            "ingredientes": [("Solomillo de Pavo", 170), ("Boniato / Batata", 200), ("Lechuga Romana", 80), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Pasta integral con tomate y parmesano",
+            "momento": [MomentoDia.COMIDA],
+            "descripcion": "Pasta fácil con grasas controladas.",
+            "ingredientes": [("Pasta Integral (Cruda)", 90), ("Tomate Frito (Estilo casero)", 120), ("Queso Parmesano (Grana Padano)", 15), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Merluza con patata y pimientos",
+            "momento": [MomentoDia.COMIDA],
+            "descripcion": "Pescado blanco con guarnición sencilla.",
+            "ingredientes": [("Merluza (Filetes/Lomos)", 180), ("Patata", 200), ("Pimiento Verde", 60), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Bowl de quinoa con pollo y aguacate",
+            "momento": [MomentoDia.COMIDA],
+            "descripcion": "Plato completo con grasas saludables.",
+            "ingredientes": [("Quinoa (Cruda)", 70), ("Pechuga de Pollo (Filetes)", 150), ("Aguacate", 80), ("Tomate (Ensalada)", 80), ("Aceite de Oliva Virgen Extra", 5)]
         },
 
         # MERIENDA (SNACK)
         {
-            "nombre": "Yogur con nueces",
+            "nombre": "Yogur natural con avena y arándanos",
             "momento": [MomentoDia.MERIENDA],
-            "descripcion": "Merienda rica en proteínas y grasas saludables.",
-            "ingredientes": [("Yogur Natural", 125), ("Nueces", 15)]
+            "descripcion": "Merienda saciante con fibra.",
+            "ingredientes": [("Yogur Natural", 200), ("Copos de Avena", 30), ("Arándanos", 80)]
         },
         {
-            "nombre": "Manzana",
+            "nombre": "Sándwich de pavo y tomate",
             "momento": [MomentoDia.MERIENDA],
-            "descripcion": "Una pieza de fruta fresca.",
-            "ingredientes": [("Manzana", 180)]
+            "descripcion": "Opción rápida y equilibrada.",
+            "ingredientes": [("Pan de Molde Integral 100%", 70), ("Pechuga de Pavo (Fiambre 90%+ carne)", 60), ("Tomate (Ensalada)", 50)]
         },
         {
-            "nombre": "Sandwich de pavo",
+            "nombre": "Queso fresco batido con pera",
             "momento": [MomentoDia.MERIENDA],
-            "descripcion": "Sandwich ligero de fiambre de pavo.",
-            "ingredientes": [("Pan Integral", 50), ("Pavo (Fiambre)", 40)]
+            "descripcion": "Merienda dulce y ligera.",
+            "ingredientes": [("Queso Fresco Batido 0%", 200), ("Pera", 150)]
         },
         {
-            "nombre": "Tostada de tomate y pavo",
+            "nombre": "Tostada con crema de cacahuete y plátano",
             "momento": [MomentoDia.MERIENDA],
-            "descripcion": "Tostada con tomate rallado y pavo.",
-            "ingredientes": [("Pan Integral", 60), ("Tomate", 40), ("Pavo (Fiambre)", 40), ("Aceite de Olivia", 5)]
+            "descripcion": "Merienda energética con grasas saludables.",
+            "ingredientes": [("Pan Integral", 60), ("Crema de Cacahuete 100%", 20), ("Plátano", 100)]
         },
 
         # CENA (DINNER)
         {
-            "nombre": "Merluza al horno con calabacín",
+            "nombre": "Tortilla francesa con verduras",
             "momento": [MomentoDia.CENA],
-            "descripcion": "Cena ligera de pescado blanco.",
-            "ingredientes": [("Merluza", 150), ("Calabacin", 200), ("Aceite de Olivia", 5)]
+            "descripcion": "Cena rápida con proteína y verduras.",
+            "ingredientes": [("Huevo (Tamaño M/L)", 140), ("Pimiento Rojo", 80), ("Calabacín", 150), ("Aceite de Oliva Virgen Extra", 5)]
         },
         {
-            "nombre": "Tortilla francesa",
+            "nombre": "Salmón con brócoli",
             "momento": [MomentoDia.CENA],
-            "descripcion": "Cena rápida y proteica.",
-            "ingredientes": [("Huevo", 120), ("Aceite de Olivia", 5)]
+            "descripcion": "Cena ligera con grasas saludables.",
+            "ingredientes": [("Salmón (Lomos)", 150), ("Brócoli", 200), ("Aceite de Oliva Virgen Extra", 5)]
         },
         {
-            "nombre": "Crema de verduras",
+            "nombre": "Ensalada de quinoa con verduras",
             "momento": [MomentoDia.CENA],
-            "descripcion": "Crema suave de verduras variadas.",
-            "ingredientes": [("Mezcla de Verduras", 300), ("Patata", 50), ("Aceite de Olivia", 5)]
-        }
-        ,
+            "descripcion": "Cena fresca con carbohidratos y grasas saludables.",
+            "ingredientes": [("Quinoa (Cruda)", 60), ("Pepino", 100), ("Tomate (Ensalada)", 120), ("Aceite de Oliva Virgen Extra", 5)]
+        },
         {
-            "nombre": "Ensalada templada de lentejas",
+            "nombre": "Revuelto de setas y gambones",
             "momento": [MomentoDia.CENA],
-            "descripcion": "Lentejas con verduras salteadas y aceite.",
-            "ingredientes": [("Lentejas (cocidas)", 200), ("Mezcla de Verduras", 120), ("Aceite de Olivia", 5)]
+            "descripcion": "Cena proteica y ligera.",
+            "ingredientes": [("Setas (Variadas)", 150), ("Gambones", 140), ("Huevo (Tamaño M/L)", 100), ("Aceite de Oliva Virgen Extra", 5)]
+        },
+        {
+            "nombre": "Crema de calabacín",
+            "momento": [MomentoDia.CENA],
+            "descripcion": "Crema ligera y económica.",
+            "ingredientes": [("Calabacín", 300), ("Cebolla", 40), ("Aceite de Oliva Virgen Extra", 5)]
         }
     ]
 

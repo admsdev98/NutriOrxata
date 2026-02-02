@@ -26,7 +26,11 @@ function removeUser() {
 }
 
 async function request(endpoint, options = {}) {
-  const url = `${API_URL}${endpoint}`;
+  let normalizedEndpoint = endpoint;
+  if (API_URL.endsWith('/api') && endpoint.startsWith('/api/')) {
+    normalizedEndpoint = endpoint.slice(4);
+  }
+  const url = `${API_URL}${normalizedEndpoint}`;
   const token = getToken();
   const { skipAuthRedirect, ...requestOptions } = options;
   

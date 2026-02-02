@@ -14,6 +14,27 @@ const MOMENTOS_DISPLAY = {
   cena: { icon: '🌙', label: 'Cena' },
 };
 
+function normalizeText(value) {
+  return (value || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getSearchTokens(value) {
+  return normalizeText(value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function matchesTokens(text, tokens) {
+  if (!tokens.length) return true;
+  const normalized = normalizeText(text);
+  return tokens.every(token => normalized.includes(token));
+}
+
 function getPlatoMomentos(plato) {
   if (!plato) return [];
   if (Array.isArray(plato.momentos_dia) && plato.momentos_dia.length > 0) {
@@ -280,10 +301,10 @@ function UserPlatosModal({ user, onClose, onSave }) {
     }
   }
 
-  const normalizedFilter = libraryFilter.trim().toLowerCase();
+  const libraryTokens = getSearchTokens(libraryFilter);
   const filteredPlatos = platos.filter(plato => {
-    const name = (plato.nombre || '').toLowerCase();
-    const matchesSearch = name.includes(normalizedFilter);
+    const combined = `${plato.nombre || ''} ${plato.descripcion || ''}`;
+    const matchesSearch = matchesTokens(combined, libraryTokens);
     const momentos = getPlatoMomentos(plato);
     const matchesMomento = momentos.length === 0 || momentos.includes(selectedMoment);
     return matchesSearch && matchesMomento;

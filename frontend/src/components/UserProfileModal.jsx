@@ -12,6 +12,7 @@ function UserProfileModal({ user, onClose, onSave }) {
     peso: '',
     sexo: 'hombre'
   });
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -25,7 +26,13 @@ function UserProfileModal({ user, onClose, onSave }) {
         sexo: user.sexo || 'hombre',
       });
     }
+    setNewPassword('');
   }, [user]);
+
+  function handleClose() {
+    setNewPassword('');
+    onClose();
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,9 +43,15 @@ function UserProfileModal({ user, onClose, onSave }) {
         altura: formData.altura ? parseInt(formData.altura) : null,
         peso: formData.peso ? parseFloat(formData.peso) : null,
       };
+
+      const trimmedPassword = newPassword.trim();
+      if (trimmedPassword) {
+        payload.password = trimmedPassword;
+      }
       
       await api.auth.updateUser(user.id, payload);
       onSave(); // Trigger reload in parent
+      setNewPassword('');
       onClose();
     } catch (err) {
       alert('Error updating profile: ' + err.message);
@@ -50,7 +63,7 @@ function UserProfileModal({ user, onClose, onSave }) {
       <div className="modal profile-modal">
         <div className="modal-header">
           <h3>Editar Perfil: {user.nombre}</h3>
-          <button className="modal-close" onClick={onClose}>&times;</button>
+          <button className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-body profile-body">
           <section className="profile-section panel-card">
@@ -91,6 +104,17 @@ function UserProfileModal({ user, onClose, onSave }) {
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
                 required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nueva contraseña (opcional)</label>
+              <input
+                type="password"
+                className="form-input"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Dejar en blanco para no cambiar"
               />
             </div>
           </section>
@@ -160,7 +184,7 @@ function UserProfileModal({ user, onClose, onSave }) {
           </section>
 
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
             <button type="submit" className="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
