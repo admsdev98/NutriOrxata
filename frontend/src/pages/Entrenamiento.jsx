@@ -55,7 +55,7 @@ export default function Entrenamiento() {
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div className="p-3 bg-blue-50 text-blue-600 rounded-xl text-2xl group-hover:bg-primary group-hover:text-white transition-colors">
-                           ⚡
+                           Plan
                         </div>
                         <button className="btn btn-ghost btn-sm text-primary group-hover:underline">Empezar →</button>
                     </div>
@@ -72,13 +72,13 @@ export default function Entrenamiento() {
         </div>
         
         <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
-             <span className="text-2xl">💡</span>
+             <span className="text-2xl">Nota</span>
              <div>
-                 <h4 className="font-bold text-yellow-800">Consejo del Coach</h4>
-                 <p className="text-yellow-700 text-sm mt-1">
-                     No te saltes el calentamiento. Realiza 5-10 minutos de movilidad antes de empezar con las series efectivas.
-                 </p>
-             </div>
+                  <h4 className="font-bold text-yellow-800">Consejo del Coach</h4>
+                  <p className="text-yellow-700 text-sm mt-1">
+                      No te saltes el calentamiento. Realiza 5-10 minutos de movilidad antes de empezar con las series efectivas.
+                  </p>
+              </div>
         </div>
       </div>
     );
@@ -97,8 +97,8 @@ export default function Entrenamiento() {
           </button>
           <h1 className="page-title text-2xl">{activeRoutine.name}</h1>
         </div>
-        <button className="btn btn-success" onClick={() => { alert('¡Entrenamiento Guardado!'); setActiveRoutine(null); }}>
-          <span>✅</span> Terminar
+        <button className="btn btn-primary" onClick={() => { alert('¡Entrenamiento Guardado!'); setActiveRoutine(null); }}>
+          Terminar
         </button>
       </div>
 
@@ -141,9 +141,9 @@ export default function Entrenamiento() {
                        <span className="text-xs text-secondary">kg</span>
                        <input type="number" placeholder={ex.reps} className="form-input py-1 text-sm text-center" />
                        <span className="text-xs text-secondary">reps</span>
-                       <button className="w-8 h-8 rounded bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600 flex items-center justify-center transition-colors">
-                          ✓
-                       </button>
+                        <button type="button" className="w-8 h-8 rounded bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600 flex items-center justify-center transition-colors">
+                           OK
+                        </button>
                    </div>
                ))}
             </div>

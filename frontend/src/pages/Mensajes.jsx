@@ -89,7 +89,7 @@ export default function Mensajes() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50">
-              <div className="text-4xl mb-4">💬</div>
+              <div className="text-4xl mb-4">Mensajes</div>
               <h3 className="font-bold">Selecciona una conversación</h3>
               <p className="text-sm">Tus mensajes aparecerán aquí</p>
             </div>

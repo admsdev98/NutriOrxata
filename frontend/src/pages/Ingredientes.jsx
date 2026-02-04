@@ -51,9 +51,9 @@ function IngredienteModal({ ingrediente, onClose, onSave }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title font-bold text-xl text-primary-600">
-            {ingrediente?.id ? '✏️ Editar Ingrediente' : '➕ Nuevo Ingrediente'}
+            {ingrediente?.id ? 'Editar Ingrediente' : 'Nuevo Ingrediente'}
           </h2>
-          <button className="btn-icon" onClick={onClose}>✕</button>
+          <button className="btn-icon" onClick={onClose}>X</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-body space-y-4">
             <div className="form-group">
@@ -92,7 +92,7 @@ function IngredienteModal({ ingrediente, onClose, onSave }) {
 
             <div className="bg-input p-4 rounded-lg border border-border mt-2">
                 <h4 className="text-secondary font-semibold text-sm mb-3 uppercase tracking-wide">
-                📊 Información Nutricional (por 100g)
+                Información Nutricional (por 100g)
                 </h4>
                 <div className="grid grid-cols-4 gap-2">
                     <div className="form-group">
@@ -209,12 +209,11 @@ function Ingredientes() {
                 <div className="relative flex-1">
                     <input 
                         type="text" 
-                        className="form-input pl-10" 
+                        className="form-input" 
                         placeholder="Buscar ingrediente..." 
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
-                    <span className="absolute left-3 top-3 text-secondary">🔍</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
                     <button 
@@ -250,8 +249,8 @@ function Ingredientes() {
                                     <div className="flex justify-between items-start mb-2">
                                         <h4 className="font-bold text-main">{ing.nombre}</h4>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 absolute top-2 right-2 bg-white p-1 rounded shadow-sm border border-border">
-                                            <button onClick={() => { setEditingItem(ing); setModalOpen(true); }} className="text-sm p-1 hover:text-primary">✏️</button>
-                                            <button onClick={() => handleDelete(ing.id)} className="text-sm p-1 hover:text-error">🗑️</button>
+                                            <button type="button" onClick={() => { setEditingItem(ing); setModalOpen(true); }} className="btn btn-secondary btn-sm">Editar</button>
+                                            <button type="button" onClick={() => handleDelete(ing.id)} className="btn btn-secondary btn-sm" style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}>Borrar</button>
                                         </div>
                                     </div>
                                     <div className="text-xs text-secondary mb-3">{ing.supermercado || 'Genérico'}</div>

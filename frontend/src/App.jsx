@@ -15,7 +15,6 @@ import RutinasAdmin from './pages/RutinasAdmin';
 import Mensajes from './pages/Mensajes';
 import ClienteDetalle from './pages/ClienteDetalle';
 import api from './api/client';
-import DevToolbar from './components/DevToolbar';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const isAuthenticated = api.auth.isAuthenticated();
@@ -65,13 +64,13 @@ function Sidebar({ theme, onToggleTheme }) {
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        {isMenuOpen ? '✕' : '☰'}
+        {isMenuOpen ? 'X' : 'Menu'}
       </button>
 
       <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
-            🍊 <span>NutriOrxata</span>
+            <span>NutriOrxata</span>
           </div>
         </div>
 
@@ -81,17 +80,17 @@ function Sidebar({ theme, onToggleTheme }) {
           </div>
           
           <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <span>📊</span> Dashboard
+            <span>Dashboard</span>
           </NavLink>
 
           <NavLink to="/planificador" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <span>📅</span> {isAdmin ? 'Mi Día' : 'Mi Menú'}
+            <span>{isAdmin ? 'Planificador' : 'Mi Plan'}</span>
           </NavLink>
 
           {/* Client Specific */}
           {!isAdmin && (
             <NavLink to="/entrenamiento" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <span>💪</span> Entrenamiento
+              <span>Entrenamiento</span>
             </NavLink>
           )}
 
@@ -103,22 +102,22 @@ function Sidebar({ theme, onToggleTheme }) {
                 Administración
               </div>
               <NavLink to="/usuarios" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>👥</span> Clientes
+                <span>Clientes</span>
               </NavLink>
               <NavLink to="/mensajes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>💬</span> Mensajes
+                <span>Mensajes</span>
               </NavLink>
               <NavLink to="/rutinas" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>💪</span> Rutinas
+                <span>Rutinas</span>
               </NavLink>
               <NavLink to="/ingredientes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>📦</span> Ingredientes
+                <span>Ingredientes</span>
               </NavLink>
               <NavLink to="/platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>🍽️</span> Platos
+                <span>Platos</span>
               </NavLink>
               <NavLink to="/gestion-platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>🍱</span> Gestión Platos
+                <span>Gestion platos</span>
               </NavLink>
             </>
           )}
@@ -129,11 +128,11 @@ function Sidebar({ theme, onToggleTheme }) {
           </div>
           
           <NavLink to="/perfil" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-             <span>👤</span> Perfil
+             <span>Perfil</span>
           </NavLink>
           
           <NavLink to="/ayuda" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-             <span>❓</span> Ayuda
+             <span>Ayuda</span>
           </NavLink>
         </nav>
 
@@ -150,7 +149,7 @@ function Sidebar({ theme, onToggleTheme }) {
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button onClick={onToggleTheme} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center' }}>
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {theme === 'dark' ? 'Claro' : 'Oscuro'}
             </button>
             <button onClick={handleLogout} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center', color: 'var(--accent-error)', borderColor: 'rgba(239,68,68,0.3)' }}>
               Salir
@@ -166,7 +165,6 @@ function AppLayout({ theme, onToggleTheme }) {
   return (
     <div className="app">
       <Sidebar theme={theme} onToggleTheme={onToggleTheme} />
-      <DevToolbar />
       <main className="main-content">
         <Routes>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

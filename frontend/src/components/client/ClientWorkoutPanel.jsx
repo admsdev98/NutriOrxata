@@ -64,7 +64,7 @@ function ClientWorkoutPanel({ user, onSave }) {
                                     disabled={saving || isActive}
                                     className={`btn w-full ${isActive ? 'btn-ghost text-primary border-primary-200 bg-primary-50' : 'btn-outline'}`}
                                 >
-                                    {saving && !isActive ? 'Asignando...' : isActive ? '✅ Asignada Actual' : 'Seleccionar Rutina'}
+                                    {saving && !isActive ? 'Asignando...' : isActive ? 'Asignada' : 'Seleccionar Rutina'}
                                 </button>
                             </div>
                         </div>
@@ -73,7 +73,7 @@ function ClientWorkoutPanel({ user, onSave }) {
 
                 {/* Custom/New Placeholder */}
                 <div className="card border-2 border-dashed border-border flex flex-col items-center justify-center p-8 text-center min-h-[250px] opacity-60">
-                    <div className="text-3xl mb-2">🚧</div>
+                    <div className="text-3xl mb-2">En desarrollo</div>
                     <div className="font-bold text-secondary">Diseñador Personalizado</div>
                     <p className="text-xs text-secondary mt-1">Próximamente podrás crear rutinas personalizadas desde cero para este cliente.</p>
                 </div>

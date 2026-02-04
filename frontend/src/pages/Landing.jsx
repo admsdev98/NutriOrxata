@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (api.auth.isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <div className="landing-page">
       <nav style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
         <div className="sidebar-logo">
-          🥗 <span>NutriOrxata</span>
+          <span>NutriOrxata</span>
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           <button onClick={() => navigate('/login')} className="btn btn-ghost">Iniciar Sesión</button>
@@ -44,9 +51,9 @@ export default function Landing() {
               <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '16px 0', color: 'var(--text-main)' }}>0€</div>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Para empezar a cuidarte</p>
               <ul style={{ listStyle: 'none', textAlign: 'left', marginBottom: '24px', lineHeight: '2' }}>
-                <li>🥗 Menú semanal básico</li>
-                <li>📊 Registro de peso</li>
-                <li>💪 1 Rutina estándar</li>
+                <li>Menú semanal básico</li>
+                <li>Registro de peso</li>
+                <li>1 rutina estándar</li>
               </ul>
               <button className="btn btn-secondary btn-full">Seleccionar</button>
             </div>
@@ -57,10 +64,10 @@ export default function Landing() {
               <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '16px 0', color: 'var(--primary-600)' }}>29€</div>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Seguimiento completo</p>
               <ul style={{ listStyle: 'none', textAlign: 'left', marginBottom: '24px', lineHeight: '2' }}>
-                <li>🥗 Menús personalizados</li>
-                <li>📊 Gráficas de progreso</li>
-                <li>💪 Rutinas ilimitadas</li>
-                <li>💬 Chat con nutricionista</li>
+                <li>Menús personalizados</li>
+                <li>Gráficas de progreso</li>
+                <li>Rutinas ilimitadas</li>
+                <li>Chat con nutricionista</li>
               </ul>
               <button className="btn btn-primary btn-full">Empezar Ahora</button>
             </div>
@@ -70,9 +77,9 @@ export default function Landing() {
               <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '16px 0', color: 'var(--text-main)' }}>Contactar</div>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Para equipos grandes</p>
               <ul style={{ listStyle: 'none', textAlign: 'left', marginBottom: '24px', lineHeight: '2' }}>
-                <li>🏢 Gestión de múltiples clientes</li>
-                <li>📈 Panel de administración</li>
-                <li>🎨 Marca blanca</li>
+                <li>Gestión de múltiples clientes</li>
+                <li>Panel de administración</li>
+                <li>Marca blanca</li>
               </ul>
               <button className="btn btn-secondary btn-full">Contactar</button>
             </div>

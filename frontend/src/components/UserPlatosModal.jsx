@@ -7,11 +7,11 @@ function roundToOneDecimal(value) {
 
 const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
 const MOMENTOS_DISPLAY = {
-  desayuno: { icon: '🌅', label: 'Desayuno' },
-  almuerzo: { icon: '🥪', label: 'Almuerzo' },
-  comida: { icon: '☀️', label: 'Comida' },
-  merienda: { icon: '🍎', label: 'Merienda' },
-  cena: { icon: '🌙', label: 'Cena' },
+  desayuno: { label: 'Desayuno' },
+  almuerzo: { label: 'Almuerzo' },
+  comida: { label: 'Comida' },
+  merienda: { label: 'Merienda' },
+  cena: { label: 'Cena' },
 };
 
 function normalizeText(value) {
@@ -411,7 +411,7 @@ function UserPlatosModal({ user, onClose, onSave }) {
                     className={`btn btn-outline btn-sm ${selectedMoment === momento ? 'active' : ''}`}
                     onClick={() => setSelectedMoment(momento)}
                   >
-                    {MOMENTOS_DISPLAY[momento].icon} {MOMENTOS_DISPLAY[momento].label}
+                    {MOMENTOS_DISPLAY[momento].label}
                   </button>
                 ))}
               </div>

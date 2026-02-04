@@ -7,11 +7,11 @@ function roundToOneDecimal(value) {
 
 const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
 const MOMENTOS_DISPLAY = {
-  desayuno: { icon: '🌅', label: 'Desayuno' },
-  almuerzo: { icon: '🥪', label: 'Almuerzo' },
-  comida: { icon: '☀️', label: 'Comida' },
-  merienda: { icon: '🍎', label: 'Merienda' },
-  cena: { icon: '🌙', label: 'Cena' },
+  desayuno: { label: 'Desayuno' },
+  almuerzo: { label: 'Almuerzo' },
+  comida: { label: 'Comida' },
+  merienda: { label: 'Merienda' },
+  cena: { label: 'Cena' },
 };
 
 function normalizeText(value) {
@@ -324,7 +324,7 @@ function ClientNutritionPanel({ user, onSave }) {
               <div className="card p-6">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h4 className="font-bold flex items-center gap-2">📊 Porcentajes Diarios</h4>
+                    <h4 className="font-bold">Porcentajes diarios</h4>
                     <p className="text-sm text-secondary">La distribución se aplica automáticamente a las comidas.</p>
                   </div>
                   <div className={`text-sm font-medium ${Math.round(distributionTotal) === 100 ? 'text-green-600' : 'text-orange-600'}`}>
@@ -346,7 +346,7 @@ function ClientNutritionPanel({ user, onSave }) {
                             value={distribution[momento]}
                             onChange={e => setDistribution(prev => ({ ...prev, [momento]: e.target.value }))}
                           />
-                          <span className="text-muted text-xs">%</span>
+                          <span className="text-secondary text-xs">%</span>
                         </div>
                         <div className="text-xs text-secondary text-center">
                           {kcalValue ? `${kcalValue} kcal` : '-'}
@@ -378,8 +378,7 @@ function ClientNutritionPanel({ user, onSave }) {
                                 : 'text-secondary hover:bg-white/50 hover:text-main'}`}
                         onClick={() => setSelectedMoment(momento)}
                     >
-                        <span>{MOMENTOS_DISPLAY[momento].icon}</span>
-                        <span className="hidden md:inline">{MOMENTOS_DISPLAY[momento].label}</span>
+                        <span>{MOMENTOS_DISPLAY[momento].label}</span>
                     </button>
                     ))}
                 </div>
@@ -449,7 +448,7 @@ function ClientNutritionPanel({ user, onSave }) {
                                 className="btn btn-secondary btn-sm text-xs"
                                 onClick={() => applyDistributionToMoment(selectedMoment)}
                             >
-                                ⚡ Ajustar Kcal
+                                Ajustar kcal
                             </button>
                         )}
                     </div>
@@ -458,11 +457,10 @@ function ClientNutritionPanel({ user, onSave }) {
                          {loadingPlatos ? (
                              <div className="py-20 flex justify-center"><div className="spinner" /></div>
                          ) : platosByMomento[selectedMoment].length === 0 ? (
-                             <div className="py-20 text-center flex flex-col items-center justify-center h-full">
-                                 <div className="text-4xl mb-4 opacity-50">🍽️</div>
-                                 <p className="text-secondary font-medium">No has asignado platos para {MOMENTOS_DISPLAY[selectedMoment].label}</p>
-                                 <p className="text-secondary text-sm mt-2">Selecciona platos del panel izquierdo.</p>
-                             </div>
+                              <div className="py-20 text-center flex flex-col items-center justify-center h-full">
+                                  <p className="text-secondary font-medium">No has asignado platos para {MOMENTOS_DISPLAY[selectedMoment].label}</p>
+                                  <p className="text-secondary text-sm mt-2">Selecciona platos del panel izquierdo.</p>
+                              </div>
                          ) : (
                              platosByMomento[selectedMoment].map(plato => {
                                  const currentAdjust = adjustments[plato.id] || {};
@@ -471,16 +469,16 @@ function ClientNutritionPanel({ user, onSave }) {
                                  return (
                                      <div key={plato.id} className={`border border-border rounded-xl overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-primary-100 border-primary-300' : 'bg-white'}`}>
                                          <div className="p-4 flex gap-4 items-center">
-                                             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-xl shrink-0">
-                                                 {selectedMoment === 'desayuno' ? '☕' : selectedMoment === 'cena' ? '🌙' : '🥗'}
-                                             </div>
-                                             <div className="flex-1 min-w-0">
-                                                 <div className="font-bold text-main truncate">{plato.plato_nombre}</div>
-                                                 <div className="text-sm text-secondary flex gap-3">
-                                                     <span>🔥 {Math.round(plato.calorias_totales)} kcal</span>
-                                                     <span>⚖️ {plato.peso_total_gramos} g</span>
-                                                 </div>
-                                             </div>
+                                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-xl shrink-0" aria-hidden>
+                                                  {MOMENTOS_DISPLAY[selectedMoment].label.substring(0, 1)}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                  <div className="font-bold text-main truncate">{plato.plato_nombre}</div>
+                                                  <div className="text-sm text-secondary flex gap-3">
+                                                      <span>{Math.round(plato.calorias_totales)} kcal</span>
+                                                      <span>{plato.peso_total_gramos} g</span>
+                                                  </div>
+                                              </div>
                                              <div className="flex gap-2">
                                                  <button 
                                                      onClick={() => setExpandedPlatoId(isExpanded ? null : plato.id)}
@@ -488,12 +486,12 @@ function ClientNutritionPanel({ user, onSave }) {
                                                  >
                                                      {isExpanded ? 'Listo' : 'Editar'}
                                                  </button>
-                                                 <button 
-                                                     onClick={() => handleDeletePlato(plato.id)}
-                                                     className="btn btn-sm btn-outline text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
-                                                 >
-                                                     🗑️
-                                                 </button>
+                                                  <button 
+                                                      onClick={() => handleDeletePlato(plato.id)}
+                                                      className="btn btn-sm btn-outline text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
+                                                  >
+                                                      Quitar
+                                                  </button>
                                              </div>
                                          </div>
 

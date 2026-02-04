@@ -20,14 +20,6 @@ function Usuarios() {
 
   const currentUser = api.auth.getUser();
 
-  // Stats placeholders (could be derived from data)
-  const stats = [
-    { label: 'Total Clientes', value: clientTotal, icon: '👥', color: 'var(--accent-info)' },
-    { label: 'Activos', value: clientes.filter(c => c.activo).length, icon: '📈', color: 'var(--accent-success)' },
-    { label: 'Objetivo Definición', value: clientes.filter(c => c.objetivo === 'definicion').length, icon: '⚖️', color: 'var(--accent-warning)' },
-    { label: 'Nuevos (Mes)', value: '+4', icon: '✨', color: 'var(--accent-primary)' },
-  ];
-
   useEffect(() => {
     loadData();
   }, [clientPage, search]);
@@ -147,12 +139,11 @@ function Usuarios() {
                 <div className="relative">
                     <input 
                         type="text" 
-                        className="form-input pl-10" 
+                        className="form-input" 
                         placeholder="Buscar por nombre o email..." 
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
-                    <span className="absolute left-3 top-2.5 text-secondary">🔍</span>
                 </div>
 
                 {/* ADMINS / TRABAJADORES SECTION */}
@@ -208,7 +199,7 @@ function Usuarios() {
                 <div className="modal">
                     <div className="modal-header">
                         <h2 className="modal-title">Nuevo Usuario</h2>
-                        <button className="btn-icon" onClick={() => setShowCreateModal(false)}>✕</button>
+                        <button className="btn-icon" onClick={() => setShowCreateModal(false)}>X</button>
                     </div>
                     <form onSubmit={handleCreate} className="modal-body space-y-4">
                         <div className="form-group">

@@ -1,349 +1,616 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { 
-  format, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval, 
-  addWeeks, subWeeks, isSameDay, isToday, startOfDay, addHours, setHours, setMinutes 
-} from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 
-// --- ADMIN COMPONENT (Original Event Scheduler) ---
-function AdminPlanner({ currentDate, view, setView, changeDate, goToToday }) {
-  const [events, setEvents] = useState([
-    { id: 1, title: 'Reunión Equipó', start: setHours(currentDate, 9), end: setHours(currentDate, 10), type: 'work' },
-    { id: 2, title: 'Comida Cliente', start: setHours(currentDate, 13), end: setHours(currentDate, 14), type: 'meeting' },
-    { id: 3, title: 'Revisión Dietas', start: setHours(currentDate, 16), duration: 2, end: setHours(currentDate, 18), type: 'task' },
-  ]);
+const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+const DIAS_DISPLAY = {
+  lunes: 'Lunes',
+  martes: 'Martes',
+  miercoles: 'Miercoles',
+  jueves: 'Jueves',
+  viernes: 'Viernes',
+  sabado: 'Sabado',
+  domingo: 'Domingo'
+};
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({
-      start: weekStart,
-      end: endOfWeek(currentDate, { weekStartsOn: 1 })
-  });
+const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
+const MOMENTOS_DISPLAY = {
+  desayuno: 'Desayuno',
+  almuerzo: 'Almuerzo',
+  comida: 'Comida',
+  merienda: 'Merienda',
+  cena: 'Cena'
+};
 
-  const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 to 20:00
-
-  const handleSlotClick = (day, hour) => {
-      const newEventStart = setMinutes(setHours(day, hour), 0);
-      const newEventEnd = addHours(newEventStart, 1);
-      
-      const title = prompt("Nuevo Evento:");
-      if (title) {
-          setEvents([...events, {
-              id: Date.now(),
-              title,
-              start: newEventStart,
-              end: newEventEnd,
-              type: 'general'
-          }]);
-      }
-  };
-
-  const renderEvent = (event, isWeekView = false) => {
-      return (
-          <div 
-            key={event.id}
-            className={`
-                absolute rounded-md p-2 text-xs font-bold shadow-sm overflow-hidden cursor-pointer hover:brightness-95 transition-all
-                ${event.type === 'work' ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-500' : ''}
-                ${event.type === 'meeting' ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-500' : ''}
-                ${event.type === 'task' ? 'bg-green-100 text-green-700 border-l-4 border-green-500' : ''}
-                ${event.type === 'general' ? 'bg-gray-100 text-gray-700 border-l-4 border-gray-500' : ''}
-            `}
-            style={{
-                top: isWeekView 
-                    ? `${(event.start.getHours() - 8) * 60}px` 
-                    : `${(event.start.getHours() - 8) * 80 + event.start.getMinutes() * (80/60)}px`,
-                height: isWeekView
-                    ? `${(event.end.getHours() - event.start.getHours()) * 60}px`
-                    : `${(event.end - event.start) / (1000 * 60 * 60) * 80}px`,
-                width: 'calc(100% - 10px)',
-                left: '5px'
-            }}
-            onClick={(e) => { e.stopPropagation(); alert(`Editar: ${event.title}`); }}
-          >
-              <div className="truncate">{event.title}</div>
-              <div className="text-[10px] opacity-80">{format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}</div>
-          </div>
-      );
-  };
-
-  return (
-      <div className="flex-1 bg-white border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
-          {view === 'week' && (
-              <div className="grid grid-cols-8 border-b border-border bg-gray-50">
-                  <div className="p-4 text-center border-r border-border font-bold text-xs text-secondary">GMT+1</div>
-                  {weekDays.map(day => (
-                      <div key={day.toString()} className={`p-2 text-center border-r border-border last:border-none ${isToday(day) ? 'bg-primary-50' : ''}`}>
-                          <div className="text-xs font-bold uppercase text-secondary mb-1">{format(day, 'EEE', { locale: es })}</div>
-                          <div className={`
-                             w-8 h-8 mx-auto flex items-center justify-center rounded-full font-bold text-sm
-                             ${isToday(day) ? 'bg-primary text-white' : 'text-main'}
-                             ${isSameDay(day, currentDate) && !isToday(day) ? 'bg-black text-white' : ''}
-                          `}>
-                              {format(day, 'd')}
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          )}
-
-          <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-              <div className={`grid ${view === 'week' ? 'grid-cols-8' : 'grid-cols-1'}`}>
-                  {view === 'week' && (
-                      <div className="border-r border-border bg-gray-50">
-                          {hours.map(hour => (
-                              <div key={hour} className="h-[60px] border-b border-border text-xs font-medium text-secondary p-2 text-right">
-                                  {hour}:00
-                              </div>
-                          ))}
-                      </div>
-                  )}
-
-                  {(view === 'week' ? weekDays : [currentDate]).map((day) => {
-                       const dayEvents = events.filter(e => isSameDay(e.start, day));
-                       return (
-                           <div key={day.toString()} className={`relative border-r border-border last:border-none min-h-[780px] ${view === 'day' ? 'w-full px-4' : ''}`}>
-                               {view === 'day' && (
-                                   <div className="sticky top-0 z-10 bg-white border-b border-border p-4 mb-4 flex justify-between items-center">
-                                       <div className="font-bold text-lg text-secondary">Agenda del Día</div>
-                                       <button className="btn btn-primary btn-sm">+ Añadir Tarea</button>
-                                   </div>
-                               )}
-                               {hours.map(hour => (
-                                   <div key={hour} className={`border-b border-dashed border-gray-100 group relative ${view === 'day' ? 'h-[80px] flex' : 'h-[60px]'}`} onClick={() => handleSlotClick(day, hour)}>
-                                       {view === 'day' && (
-                                           <div className="w-16 flex-shrink-0 text-right pr-4 text-xs font-bold text-secondary opacity-50 pt-2 border-r border-gray-100">
-                                               {hour}:00
-                                           </div>
-                                       )}
-                                       <div className="flex-1 hover:bg-gray-50 transition-colors p-2"></div>
-                                   </div>
-                               ))}
-                               <div className="absolute top-0 left-0 w-full h-full pointer-events-none pl-[64px] pb-4" style={{ paddingLeft: view === 'day' ? '64px' : '0' }}>
-                                    <div className="relative w-full h-full pointer-events-auto">
-                                        {dayEvents.map(event => renderEvent(event, view === 'week'))}
-                                    </div>
-                               </div>
-                           </div>
-                       );
-                  })}
-              </div>
-          </div>
-      </div>
-  );
+function getMonday(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
-// --- CLIENT COMPONENT (Meal Planner) ---
-function ClientPlanner({ currentDate, view, setView, changeDate, goToToday }) {
-  const mealTypes = [
-     { id: 'desayuno', label: 'Desayuno', icon: '☕', color: 'orange' },
-     { id: 'almuerzo', label: 'Almuerzo', icon: '🥗', color: 'green' },
-     { id: 'merienda', label: 'Merienda', icon: '🍎', color: 'yellow' },
-     { id: 'cena', label: 'Cena', icon: '🍽️', color: 'blue' },
-  ];
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({
-      start: weekStart,
-      end: endOfWeek(currentDate, { weekStartsOn: 1 })
-  });
+function formatWeekRange(date) {
+  const start = new Date(date);
+  const end = new Date(date);
+  end.setDate(end.getDate() + 6);
 
-  // Mock Meal Data
-  const [meals] = useState([
-      { date: format(new Date(), 'yyyy-MM-dd'), type: 'desayuno', name: 'Avena con Frutas', cal: 350 },
-      { date: format(new Date(), 'yyyy-MM-dd'), type: 'almuerzo', name: 'Ensalada César', cal: 450 },
-  ]);
+  const options = { day: 'numeric', month: 'short' };
+  const startLabel = start.toLocaleDateString('es-ES', options);
+  const endLabel = end.toLocaleDateString('es-ES', options);
+  return `${startLabel} - ${endLabel}`;
+}
 
-  const getMeal = (date, type) => {
-      return meals.find(m => m.date === format(date, 'yyyy-MM-dd') && m.type === type);
-  };
+function dayKeyFromDate(date = new Date()) {
+  const index = (date.getDay() + 6) % 7;
+  return DIAS[index];
+}
 
-  const handleMealClick = (date, type) => {
-      const existing = getMeal(date, type);
-      if(existing) {
-          alert(`Editar: ${existing.name}`);
-      } else {
-          // Navigate to add meal logic could go here
-          alert(`Añadir comida para ${type} el ${format(date, 'dd/MM')}`);
-      }
-  };
+function CalorieBar({ total, objetivo }) {
+  const safeObjetivo = objetivo && objetivo > 0 ? objetivo : 2000;
+  const porcentaje = Math.min(100, Math.round((total / safeObjetivo) * 100));
 
   return (
-    <div className="flex-1 flex flex-col gap-6">
-        {/* Navigation Cards inside Planner Context (optional, but keep it clean) */}
-        
-        {view === 'day' ? (
-            /* DAY VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mealTypes.map(meal => {
-                    const data = getMeal(currentDate, meal.id);
-                    return (
-                        <div 
-                           key={meal.id} 
-                           onClick={() => handleMealClick(currentDate, meal.id)}
-                           className={`
-                             card cursor-pointer hover:border-${meal.color}-400 transition-all group
-                             ${data ? `bg-${meal.color}-50 border-${meal.color}-200` : 'border-dashed border-2'}
-                           `}
-                        >
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-2xl">{meal.icon}</span>
-                                    <h3 className={`font-bold text-lg capitalize ${data ? `text-${meal.color}-900` : 'text-secondary'}`}>
-                                        {meal.label}
-                                    </h3>
-                                </div>
-                                {data ? (
-                                    <span className={`badge bg-white text-${meal.color}-700 shadow-sm`}>Completo</span>
-                                ) : (
-                                    <span className="btn-icon w-8 h-8 rounded-full bg-gray-100 text-gray-400 group-hover:bg-primary group-hover:text-white transition-colors">+</span>
-                                )}
-                            </div>
-                            
-                            {data ? (
-                                <div>
-                                    <div className="font-medium text-lg mb-1">{data.name}</div>
-                                    <div className="text-sm font-bold opacity-70">🔥 {data.cal} Kcal</div>
-                                </div>
-                            ) : (
-                                <div className="text-secondary text-sm py-4">
-                                    No hay registro aún. Haz clic para añadir.
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        ) : (
-            /* WEEK VIEW */
-            <div className="card p-0 overflow-hidden border border-border">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-border">
-                                <th className="p-4 text-left min-w-[100px] text-secondary">Comida</th>
-                                {weekDays.map(day => (
-                                    <th key={day.toString()} className={`p-3 text-center min-w-[120px] ${isToday(day) ? 'bg-primary-50 text-primary-700' : ''}`}>
-                                        <div className="uppercase text-xs font-bold mb-1">{format(day, 'EEE', { locale: es })}</div>
-                                        <div className="text-lg font-bold">{format(day, 'd')}</div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {mealTypes.map(meal => (
-                                <tr key={meal.id} className="border-b border-border last:border-none hover:bg-gray-50/50">
-                                    <td className="p-4 font-bold text-secondary sticky left-0 bg-white border-r border-gray-100">
-                                        <span className="mr-2">{meal.icon}</span> {meal.label}
-                                    </td>
-                                    {weekDays.map(day => {
-                                        const data = getMeal(day, meal.id);
-                                        return (
-                                            <td 
-                                               key={day.toString()} 
-                                               className="p-2 border-r border-dashed border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
-                                               onClick={() => handleMealClick(day, meal.id)}
-                                            >
-                                                {data ? (
-                                                    <div className={`p-2 rounded-lg bg-${meal.color}-50 text-${meal.color}-900 border border-${meal.color}-100 text-xs`}>
-                                                        <div className="font-bold truncate">{data.name}</div>
-                                                        <div className="opacity-75">{data.cal} kcal</div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-full w-full flex items-center justify-center opacity-0 hover:opacity-100 text-primary font-bold text-xl">
-                                                        +
-                                                    </div>
-                                                )}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        )}
+    <div>
+      <div className="flex justify-between" style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+        <span>{Math.round(total)} / {safeObjetivo} kcal</span>
+        <span>{porcentaje}%</span>
+      </div>
+      <div style={{ height: '10px', background: 'var(--bg-input)', borderRadius: '9999px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+        <div style={{ width: `${porcentaje}%`, height: '100%', background: 'var(--primary-500)' }} />
+      </div>
     </div>
   );
 }
 
+function AsignarPlatoModal({ onClose, onSave, dia, momento, platoActual, platos }) {
+  const [selectedId, setSelectedId] = useState(platoActual?.cliente_plato_id || null);
+  const [search, setSearch] = useState('');
 
-export default function Planificador() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const isAdmin = api.auth.isAdmin();
-  
-  // State from URL or defaults
-  const dateParam = searchParams.get('date');
-  const [currentDate, setCurrentDate] = useState(() => dateParam ? new Date(dateParam) : new Date());
-  const [view, setView] = useState('day'); // 'day', 'week'
+  const disponibles = useMemo(() => {
+    return platos.filter(p => {
+      const momentos = Array.isArray(p.momentos_dia) && p.momentos_dia.length
+        ? p.momentos_dia
+        : (p.momento_dia ? [p.momento_dia] : []);
+      return momentos.includes(momento);
+    });
+  }, [platos, momento]);
 
-  // Update URL when date changes
-  useEffect(() => {
-    setSearchParams({ date: format(currentDate, 'yyyy-MM-dd') });
-  }, [currentDate, setSearchParams]);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return disponibles;
+    return disponibles.filter(p => (p.plato_nombre || '').toLowerCase().includes(q));
+  }, [disponibles, search]);
 
-  const changeDate = (amount) => {
-    if (view === 'day') setCurrentDate(prev => addDays(prev, amount));
-    else setCurrentDate(prev => addWeeks(prev, amount));
-  };
-  const goToToday = () => setCurrentDate(new Date());
+  const selectedPlato = useMemo(() => platos.find(p => p.id === selectedId) || null, [platos, selectedId]);
 
   return (
-    <div className="animate-fade-in flex flex-col h-[calc(100vh-100px)]">
-      {/* Shared Header Controls */}
-      <header className="flex flex-col md:flex-row justify-between items-center mb-6">
-        <div className="flex items-center gap-4 mb-4 md:mb-0">
-             <div className="p-2 bg-primary-50 rounded-lg text-primary text-2xl">
-                {isAdmin ? '📅' : '🍱'}
-             </div>
-             <div>
-                <h1 className="text-2xl font-bold font-heading">
-                    {isAdmin ? 'Planificador' : 'Mi Menú Semanal'}
-                </h1>
-                <p className="text-secondary text-sm">
-                    {isAdmin ? 'Gestiona tu agenda y tareas' : 'Organiza tus comidas y lleva un registro'}
-                </p>
-             </div>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">{DIAS_DISPLAY[dia]} · {MOMENTOS_DISPLAY[momento]}</h2>
+          <button className="btn-icon" onClick={onClose} aria-label="Cerrar">X</button>
         </div>
 
-        <div className="flex items-center gap-4 bg-white p-1 rounded-xl border border-border bg-white shadow-sm">
-            <button onClick={() => setView('day')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'day' ? 'bg-primary text-white shadow' : 'hover:bg-gray-50 text-secondary'}`}>Día</button>
-            <button onClick={() => setView('week')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'week' ? 'bg-primary text-white shadow' : 'hover:bg-gray-50 text-secondary'}`}>Semana</button>
-        </div>
-
-        <div className="flex items-center gap-4">
-            <button onClick={() => changeDate(-1)} className="btn-icon w-9 h-9 border border-border rounded-lg hover:bg-gray-50">←</button>
-            <div className="text-center min-w-[200px]">
-                <span className="font-bold text-lg capitalize block text-main">
-                    {format(currentDate, view === 'day' ? "EEEE d 'de' MMMM" : "'Semana' w, MMM yyyy", { locale: es })}
-                </span>
-                {view === 'day' && isToday(currentDate) && <span className="text-xs font-bold text-primary uppercase tracking-wider">Hoy</span>}
+        <div className="modal-body custom-scrollbar">
+          {disponibles.length === 0 ? (
+            <div className="text-center" style={{ padding: '20px 0' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '6px' }}>Sin platos disponibles</div>
+              <div className="text-secondary" style={{ fontSize: '0.95rem' }}>Asigna platos a este momento para poder planificar.</div>
             </div>
-            <button onClick={() => changeDate(1)} className="btn-icon w-9 h-9 border border-border rounded-lg hover:bg-gray-50">→</button>
-            
-            <button onClick={goToToday} className="btn btn-ghost btn-sm text-primary font-bold">Hoy</button>
+          ) : (
+            <>
+              <div className="form-group">
+                <label className="form-label">Buscar</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Buscar plato..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  className="card"
+                  style={{
+                    padding: '14px',
+                    textAlign: 'left',
+                    borderColor: selectedId === null ? 'var(--primary-500)' : 'var(--border-color)',
+                    background: selectedId === null ? 'var(--primary-50)' : 'var(--bg-card)'
+                  }}
+                  onClick={() => setSelectedId(null)}
+                >
+                  <div style={{ fontWeight: 800, marginBottom: '4px' }}>Sin asignar</div>
+                  <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Vaciar este hueco.</div>
+                </button>
+
+                {filtered.map(plato => (
+                  <button
+                    key={plato.id}
+                    type="button"
+                    className="card"
+                    style={{
+                      padding: '14px',
+                      textAlign: 'left',
+                      borderColor: selectedId === plato.id ? 'var(--primary-500)' : 'var(--border-color)',
+                      background: selectedId === plato.id ? 'var(--primary-50)' : 'var(--bg-card)'
+                    }}
+                    onClick={() => setSelectedId(plato.id)}
+                  >
+                    <div style={{ fontWeight: 800, marginBottom: '6px' }}>{plato.plato_nombre}</div>
+                    <div className="text-secondary" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="badge badge-secondary">{Math.round(plato.calorias_totales)} kcal</span>
+                      <span className="badge badge-secondary">{plato.peso_total_gramos} g</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {(selectedPlato || platoActual?.ingredientes?.length) && (
+            <div className="card" style={{ background: 'var(--bg-input)' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '10px' }}>Ingredientes</div>
+              <div className="stack" style={{ display: 'grid', gap: '8px' }}>
+                {(selectedPlato?.ingredientes || platoActual?.ingredientes || []).map(ing => (
+                  <div key={ing.ingrediente_id} className="flex justify-between" style={{ padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontWeight: 600 }}>{ing.ingrediente_nombre}</span>
+                    <span className="text-secondary" style={{ fontWeight: 700 }}>{ing.cantidad_gramos} g</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </header>
-      
-      {/* Route to correct component based on role */}
-      {isAdmin ? (
-          <AdminPlanner 
-            currentDate={currentDate} 
-            view={view} 
-            setView={setView} 
-            changeDate={changeDate} 
-            goToToday={goToToday} 
-          />
-      ) : (
-          <ClientPlanner 
-            currentDate={currentDate} 
-            view={view} 
-            setView={setView} 
-            changeDate={changeDate} 
-            goToToday={goToToday} 
-          />
+
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-primary" onClick={() => onSave(selectedId)}>Guardar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Planificador() {
+  const [searchParams] = useSearchParams();
+  const touchStartX = useRef(null);
+
+  const isAdmin = api.auth.isAdmin();
+  const user = api.auth.getUser();
+
+  const [clientes, setClientes] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clientPlatos, setClientPlatos] = useState([]);
+  const [semanaInicio, setSemanaInicio] = useState(() => getMonday());
+  const [resumen, setResumen] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modalData, setModalData] = useState(null);
+  const [viewMode, setViewMode] = useState(() => (window.innerWidth < 1100 ? 'day' : 'week'));
+  const [selectedDay, setSelectedDay] = useState(() => dayKeyFromDate());
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadClientes();
+      return;
+    }
+    if (user) {
+      setSelectedClientId(user.id);
+      setSelectedClient(user);
+      setLoading(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (!dateParam) return;
+    const d = new Date(dateParam);
+    if (Number.isNaN(d.getTime())) return;
+    setSemanaInicio(getMonday(d));
+    setSelectedDay(dayKeyFromDate(d));
+  }, [searchParams]);
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < 1100 && viewMode === 'week') {
+        setViewMode('day');
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
+  function setViewModeSafe(mode) {
+    if (window.innerWidth < 1100 && mode === 'week') {
+      setViewMode('day');
+      return;
+    }
+    setViewMode(mode);
+  }
+
+  useEffect(() => {
+    if (selectedClientId) {
+      loadResumen();
+      loadClientPlatos();
+    }
+  }, [selectedClientId, semanaInicio]);
+
+  async function loadClientes() {
+    try {
+      setLoading(true);
+      const data = await api.auth.listUsers({ rol: 'cliente' });
+      const items = data.items || [];
+      setClientes(items);
+      if (items.length > 0 && !selectedClientId) {
+        setSelectedClientId(items[0].id);
+        setSelectedClient(items[0]);
+      } else if (selectedClientId) {
+        setSelectedClient(items.find(c => c.id === selectedClientId) || null);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadClientPlatos() {
+    try {
+      const data = await api.clientesPlatos.list(selectedClientId);
+      setClientPlatos(data);
+    } catch (error) {
+      console.error('Error:', error);
+      setClientPlatos([]);
+    }
+  }
+
+  async function loadResumen() {
+    try {
+      const data = await api.planificacion.resumen(selectedClientId, formatDate(semanaInicio));
+      setResumen(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  function prevWeek() {
+    const d = new Date(semanaInicio);
+    d.setDate(d.getDate() - 7);
+    setSemanaInicio(d);
+  }
+
+  function nextWeek() {
+    const d = new Date(semanaInicio);
+    d.setDate(d.getDate() + 7);
+    setSemanaInicio(d);
+  }
+
+  function openModal(dia, momento) {
+    const diaData = resumen?.dias?.find(d => d.dia === dia);
+    const comida = diaData?.comidas?.find(c => c.momento === momento);
+    setModalData({ dia, momento, platoActual: comida || null });
+  }
+
+  function prevDay() {
+    const index = DIAS.indexOf(selectedDay);
+    const nextIndex = (index - 1 + DIAS.length) % DIAS.length;
+    setSelectedDay(DIAS[nextIndex]);
+  }
+
+  function nextDay() {
+    const index = DIAS.indexOf(selectedDay);
+    const nextIndex = (index + 1) % DIAS.length;
+    setSelectedDay(DIAS[nextIndex]);
+  }
+
+  function handleTouchStart(event) {
+    touchStartX.current = event.touches[0].clientX;
+  }
+
+  function handleTouchEnd(event) {
+    if (touchStartX.current === null) return;
+    const endX = event.changedTouches[0].clientX;
+    const deltaX = endX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (Math.abs(deltaX) < 40) return;
+    if (deltaX > 0) prevDay();
+    else nextDay();
+  }
+
+  async function handleSavePlanificacion(clientePlatoId) {
+    try {
+      await api.planificacion.create({
+        semana_inicio: formatDate(semanaInicio),
+        dia: modalData.dia,
+        momento: modalData.momento,
+        plato_id: null,
+        cliente_plato_id: clientePlatoId,
+        client_id: selectedClientId,
+      });
+      setModalData(null);
+      loadResumen();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  }
+
+  async function handleClearMeal(dia, momento) {
+    try {
+      await api.planificacion.create({
+        semana_inicio: formatDate(semanaInicio),
+        dia,
+        momento,
+        plato_id: null,
+        cliente_plato_id: null,
+        client_id: selectedClientId,
+      });
+      loadResumen();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (isAdmin && clientes.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: 'center' }}>
+        <h3 className="card-title">No hay clientes</h3>
+        <p className="text-secondary">Crea usuarios con rol de cliente para poder planificar.</p>
+      </div>
+    );
+  }
+
+  const dailyTarget = selectedClient?.calorias_objetivo || selectedClient?.calorias_mantenimiento || 2000;
+  const currentDay = resumen?.dias?.find(d => d.dia === selectedDay) || {
+    dia: selectedDay,
+    calorias_totales: 0,
+    comidas: [],
+  };
+
+  return (
+    <div className="animate-fade-in" style={{ paddingBottom: '24px' }}>
+      <div className="card" style={{ padding: '14px', marginBottom: '18px' }}>
+        <div className="flex flex-col md:flex-row" style={{ gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ fontWeight: 900, fontSize: '1.25rem', marginBottom: '4px' }}>Planificador</div>
+            <div className="text-secondary" style={{ fontSize: '0.95rem' }}>
+              {isAdmin ? 'Gestiona el plan semanal del cliente.' : 'Consulta tu plan semanal.'}
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div style={{ minWidth: 260, width: '100%' }}>
+              <label className="form-label">Cliente</label>
+              <select
+                className="form-select"
+                value={selectedClientId || ''}
+                onChange={e => {
+                  const id = parseInt(e.target.value, 10);
+                  setSelectedClientId(id);
+                  setSelectedClient(clientes.find(c => c.id === id) || null);
+                }}
+              >
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div style={{ width: '100%', maxWidth: 420 }}>
+            <label className="form-label">Semana</label>
+            <div className="flex items-center" style={{ gap: '8px' }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={prevWeek}>Anterior</button>
+              <div className="card" style={{ flex: 1, padding: '10px 12px', textAlign: 'center', boxShadow: 'none' }}>
+                <div style={{ fontWeight: 800 }}>{formatWeekRange(semanaInicio)}</div>
+              </div>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={nextWeek}>Siguiente</button>
+            </div>
+          </div>
+
+          <div style={{ minWidth: 220, width: '100%' }}>
+            <label className="form-label">Vista</label>
+            <div className="flex" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px' }}>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  background: viewMode === 'day' ? 'var(--bg-card)' : 'transparent',
+                  boxShadow: viewMode === 'day' ? 'var(--shadow-sm)' : 'none',
+                  color: viewMode === 'day' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                }}
+                onClick={() => setViewModeSafe('day')}
+              >
+                Dia
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  background: viewMode === 'week' ? 'var(--bg-card)' : 'transparent',
+                  boxShadow: viewMode === 'week' ? 'var(--shadow-sm)' : 'none',
+                  color: viewMode === 'week' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                }}
+                onClick={() => setViewModeSafe('week')}
+              >
+                Semana
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {viewMode === 'day' && (
+        <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={prevDay}>Anterior</button>
+          <div style={{ fontWeight: 900, textTransform: 'capitalize' }}>{DIAS_DISPLAY[selectedDay]}</div>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={nextDay}>Siguiente</button>
+        </div>
+      )}
+
+      {viewMode === 'day' && (
+        <div
+          className="card"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ maxWidth: 780, marginLeft: 'auto', marginRight: 'auto' }}
+        >
+          <div style={{ marginBottom: '18px' }}>
+            <div style={{ fontWeight: 900, fontSize: '1.3rem', marginBottom: '8px', textTransform: 'capitalize' }}>{DIAS_DISPLAY[selectedDay]}</div>
+            <CalorieBar total={currentDay.calorias_totales} objetivo={dailyTarget} />
+          </div>
+
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {MOMENTOS.map(momento => {
+              const comida = currentDay.comidas.find(c => c.momento === momento);
+              return (
+                <button
+                  key={momento}
+                  type="button"
+                  className="card"
+                  onClick={() => openModal(selectedDay, momento)}
+                  style={{
+                    padding: '14px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    borderStyle: comida ? 'solid' : 'dashed',
+                    background: comida ? 'var(--bg-card)' : 'var(--bg-input)'
+                  }}
+                >
+                  <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ fontWeight: 900 }}>{MOMENTOS_DISPLAY[momento]}</div>
+                    {comida ? (
+                      <div className="badge badge-primary">{Math.round(comida.calorias)} kcal</div>
+                    ) : (
+                      <div className="badge badge-secondary">Sin asignar</div>
+                    )}
+                  </div>
+
+                  {comida ? (
+                    <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, marginBottom: '2px' }}>{comida.plato_nombre}</div>
+                        <div className="text-secondary" style={{ fontSize: '0.9rem' }}>Click para cambiar</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClearMeal(selectedDay, momento);
+                        }}
+                        style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-secondary" style={{ fontSize: '0.9rem' }}>Click para asignar un plato.</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'week' && (
+        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+          <div className="custom-scrollbar" style={{ overflowX: 'auto', padding: '16px' }}>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(7, minmax(220px, 1fr))', gap: '12px', minWidth: 1100 }}>
+              {DIAS.map(dia => {
+                const diaData = resumen?.dias?.find(d => d.dia === dia) || { calorias_totales: 0, comidas: [] };
+                return (
+                  <div key={dia} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="card" style={{ padding: '12px', boxShadow: 'none', background: 'var(--bg-card)' }}>
+                      <div style={{ fontWeight: 900, textTransform: 'capitalize', marginBottom: '8px' }}>{DIAS_DISPLAY[dia]}</div>
+                      <CalorieBar total={diaData.calorias_totales} objetivo={dailyTarget} />
+                    </div>
+
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      {MOMENTOS.map(momento => {
+                        const comida = diaData.comidas.find(c => c.momento === momento);
+                        return (
+                          <button
+                            key={momento}
+                            type="button"
+                            className="card"
+                            onClick={() => openModal(dia, momento)}
+                            style={{
+                              padding: '12px',
+                              textAlign: 'left',
+                              borderStyle: comida ? 'solid' : 'dashed',
+                              background: comida ? 'var(--bg-card)' : 'var(--bg-input)',
+                              boxShadow: 'none'
+                            }}
+                          >
+                            <div className="text-secondary" style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                              {MOMENTOS_DISPLAY[momento]}
+                            </div>
+
+                            {comida ? (
+                              <>
+                                <div style={{ fontWeight: 800, marginBottom: '6px' }}>{comida.plato_nombre}</div>
+                                <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                                  <span className="badge badge-primary">{Math.round(comida.calorias)} kcal</span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleClearMeal(dia, momento);
+                                    }}
+                                    style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}
+                                  >
+                                    Quitar
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Sin asignar</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalData && (
+        <AsignarPlatoModal
+          dia={modalData.dia}
+          momento={modalData.momento}
+          platoActual={modalData.platoActual}
+          platos={clientPlatos}
+          onClose={() => setModalData(null)}
+          onSave={handleSavePlanificacion}
+        />
       )}
     </div>
   );

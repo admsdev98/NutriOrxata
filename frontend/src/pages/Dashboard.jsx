@@ -1,299 +1,346 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
-function ClientDashboard({ user, navigate }) {
-  // Simulating data for visual impact as per mockups
-  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' });
-  const calories = 920;
-  const goal = 2500;
-  const progress = (calories / goal) * 100;
+const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+const DIAS_DISPLAY = {
+  lunes: 'Lunes',
+  martes: 'Martes',
+  miercoles: 'Miercoles',
+  jueves: 'Jueves',
+  viernes: 'Viernes',
+  sabado: 'Sabado',
+  domingo: 'Domingo'
+};
+
+const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
+const MOMENTOS_DISPLAY = {
+  desayuno: 'Desayuno',
+  almuerzo: 'Almuerzo',
+  comida: 'Comida',
+  merienda: 'Merienda',
+  cena: 'Cena'
+};
+
+function getMonday(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function dayKeyFromDate(date = new Date()) {
+  const index = (date.getDay() + 6) % 7;
+  return DIAS[index];
+}
+
+function CalorieBar({ total, objetivo }) {
+  const safeObjetivo = objetivo && objetivo > 0 ? objetivo : 2000;
+  const porcentaje = Math.min(100, Math.round((total / safeObjetivo) * 100));
 
   return (
-    <div className="animate-fade-in">
-      {/* Daily Summary Section */}
-      <div className="card mb-6 bg-gradient-to-r from-primary-50 to-white border-primary-100">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-2">
-           <div className="text-center md:text-left">
-              <h2 className="text-2xl font-bold font-heading capitalize mb-1">{today}</h2>
-              <p className="text-secondary">Resumen de hoy</p>
-           </div>
-           
-           <div className="flex items-center gap-8">
-              <div className="text-center">
-                 <div className="text-3xl font-extrabold text-primary-600">{calories}</div>
-                 <div className="text-xs font-bold text-secondary uppercase tracking-wider">Kcal Consumidas</div>
-              </div>
-              <div className="hidden md:block w-px h-12 bg-border"></div>
-              <div className="text-center">
-                 <div className="text-3xl font-extrabold text-secondary">{goal}</div>
-                 <div className="text-xs font-bold text-secondary uppercase tracking-wider">Meta Diaria</div>
-              </div>
-           </div>
-
-           <div className="w-full md:w-48">
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                 <div style={{ width: `${progress}%` }} className="h-full bg-primary-500 rounded-full"></div>
-              </div>
-              <div className="text-right text-xs font-bold text-secondary mt-1">{Math.round(progress)}%</div>
-           </div>
-        </div>
+    <div>
+      <div className="flex justify-between" style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+        <span>{Math.round(total)} / {safeObjetivo} kcal</span>
+        <span>{porcentaje}%</span>
       </div>
-
-      {/* Main Actions Grid */}
-      <div className="grid grid-1 md:grid-2 gap-6">
-        
-        {/* Meal Planner Access */}
-        <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow cursor-pointer border-transparent" onClick={() => navigate('/planificador')}>
-           <div className="h-2 bg-orange-400"></div>
-           <div className="p-6 flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-3xl">
-                 📅
-              </div>
-              <div>
-                 <h3 className="text-lg font-bold">Mi Menú</h3>
-                 <p className="text-secondary text-sm mb-3">Revisa y gestiona tus comidas del día.</p>
-                 <span className="text-sm font-bold text-primary hover:underline">Ver Planificador →</span>
-              </div>
-           </div>
-        </div>
-
-        {/* Training Access */}
-        <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow cursor-pointer border-transparent" onClick={() => navigate('/entrenamiento')}>
-           <div className="h-2 bg-blue-500"></div>
-           <div className="p-6 flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl">
-                 💪
-              </div>
-              <div>
-                 <h3 className="text-lg font-bold">Entrenamiento</h3>
-                 <p className="text-secondary text-sm mb-3">Accede a tus rutinas y registra tu progreso.</p>
-                 <span className="text-sm font-bold text-blue-600 hover:underline">Ir a Entrenar →</span>
-              </div>
-           </div>
-        </div>
-
-      </div>
-
-      <div className="grid grid-1 mt-4">
-          <div className="card">
-             <div className="card-header">
-                <h3 className="card-title">🍽️ Comidas de Hoy</h3>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/planificador')}>Ver semana complete</button>
-             </div>
-             
-             <div className="grid grid-3">
-                <div className="card" style={{ background: 'var(--bg-input)', border: 'none' }}>
-                   <div className="badge badge-warning mb-4">Desayuno</div>
-                   <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>Avena con Frutas</h4>
-                   <p className="text-secondary text-sm">Avena, Arándanos, Leche de Almendras</p>
-                   <div className="flex items-center gap-2 mt-4 text-sm font-bold text-primary-600">
-                      <span>🔥 350 Kcal</span>
-                   </div>
-                </div>
-
-                <div className="card" style={{ background: 'var(--bg-input)', border: 'none' }}>
-                   <div className="badge badge-warning mb-4">Almuerzo</div>
-                   <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>Ensalada César</h4>
-                   <p className="text-secondary text-sm">Pollo, Lechuga, Queso Parmesano</p>
-                   <div className="flex items-center gap-2 mt-4 text-sm font-bold text-primary-600">
-                      <span>🔥 450 Kcal</span>
-                   </div>
-                </div>
-
-                <div className="card" style={{ background: 'var(--bg-input)', border: 'none', opacity: 0.7 }}>
-                   <div className="badge badge-warning mb-4">Cena</div>
-                   <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>Salmón al Horno</h4>
-                   <p className="text-secondary text-sm">Salmón, Espárragos, Patata</p>
-                   <div className="flex items-center gap-2 mt-4 text-sm font-bold text-primary-600">
-                      <span>🔥 420 Kcal</span>
-                   </div>
-                </div>
-             </div>
-          </div>
+      <div style={{ height: '10px', background: 'var(--bg-input)', borderRadius: '9999px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+        <div style={{ width: `${porcentaje}%`, height: '100%', background: 'var(--primary-500)' }} />
       </div>
     </div>
   );
 }
 
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, addMonths, subMonths, isSameMonth, isSameDay, isToday, addWeeks, subWeeks } from 'date-fns';
-import { es } from 'date-fns/locale';
+function AdminCalendar({ onPickDate }) {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
 
-function AdminDashboard({ user, navigate }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState('month'); // 'month', 'week'
+  const todayKey = formatDate(new Date());
 
-  // Mock data for functionality
-  const tasks = [
-    { id: 1, type: 'confirmed', category: 'Videollamada', time: '14:00', duration: '1h', client: 'Alice Johnson' },
-    { id: 2, type: 'pending', category: 'Llamada', time: '16:00', duration: '45m', client: 'Bob Smith' },
-  ];
+  const days = useMemo(() => {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth();
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
 
-  const upcomingEvents = [
-    { date: new Date().getDate() + 2, count: 3, type: 'Citas' },
-    { date: new Date().getDate(), count: 1, type: 'Revision' },
-  ];
+    const start = new Date(first);
+    const weekday = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - weekday);
+    start.setHours(0, 0, 0, 0);
 
-  const handleDateClick = (day) => {
-    const isCurrentMonth = isSameMonth(day, currentDate);
-    if (isCurrentMonth || view === 'week') {
-       navigate(`/planificador?date=${format(day, 'yyyy-MM-dd')}`);
+    const end = new Date(last);
+    const weekdayEnd = (end.getDay() + 6) % 7;
+    end.setDate(end.getDate() + (6 - weekdayEnd));
+    end.setHours(0, 0, 0, 0);
+
+    const out = [];
+    const d = new Date(start);
+    while (d <= end) {
+      out.push(new Date(d));
+      d.setDate(d.getDate() + 1);
     }
-  };
+    return { days: out, month };
+  }, [cursor]);
 
-  const nextPeriod = () => {
-    if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
-    else setCurrentDate(addWeeks(currentDate, 1));
-  };
+  function prevMonth() {
+    const d = new Date(cursor);
+    d.setMonth(d.getMonth() - 1);
+    setCursor(d);
+  }
 
-  const prevPeriod = () => {
-    if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
-    else setCurrentDate(subWeeks(currentDate, 1));
-  };
+  function nextMonth() {
+    const d = new Date(cursor);
+    d.setMonth(d.getMonth() + 1);
+    setCursor(d);
+  }
 
-  const renderCalendar = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
-
-    const dateFormat = "d";
-    const days = [];
-    let day = startDate;
-    let formattedDate = "";
-
-    // Generate days for the grid
-    const calendarDays = eachDayOfInterval({
-        start: view === 'month' ? startDate : startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: view === 'month' ? endDate : endOfWeek(currentDate, { weekStartsOn: 1 })
-    });
-
-    const weekDays = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-
-    return (
-      <div className="card h-full min-h-[500px] flex flex-col p-6">
-        {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-8">
-            <div className="flex gap-2">
-                <button 
-                  onClick={() => setView('month')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'month' ? 'bg-primary text-white shadow-md' : 'bg-input text-secondary hover:bg-gray-100'}`}
-                >
-                  Mes
-                </button>
-                <button 
-                  onClick={() => setView('week')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'week' ? 'bg-primary text-white shadow-md' : 'bg-input text-secondary hover:bg-gray-100'}`}
-                >
-                  Semana
-                </button>
-            </div>
-            
-            <div className="flex items-center gap-6">
-                <button onClick={prevPeriod} className="btn-icon w-8 h-8 rounded-full hover:bg-gray-100">‹</button>
-                <span className="font-bold text-xl text-main capitalize min-w-[150px] text-center">
-                    {format(currentDate, view === 'month' ? 'MMMM yyyy' : "'Semana del' d 'de' MMM", { locale: es })}
-                </span>
-                <button onClick={nextPeriod} className="btn-icon w-8 h-8 rounded-full hover:bg-gray-100">›</button>
-            </div>
-
-            <button onClick={() => setCurrentDate(new Date())} className="text-sm font-bold text-primary hover:underline">
-                Hoy
-            </button>
-        </div>
-
-        {/* Days Header */}
-        <div className="grid grid-cols-7 mb-4">
-            {weekDays.map(d => (
-               <div key={d} className="text-center text-xs font-bold uppercase text-secondary tracking-wider opacity-60">{d}</div>
-            ))}
-        </div>
-        
-        {/* Calendar Grid - Minimalist */}
-        <div className={`
-            flex-1 grid grid-cols-7 
-            ${view === 'month' ? 'auto-rows-fr gap-y-4' : 'h-full'}
-        `}>
-            {calendarDays.map((dayItem, i) => {
-              const isCurrentMonth = isSameMonth(dayItem, monthStart);
-              const isDayToday = isToday(dayItem);
-              
-              const dayEvents = upcomingEvents.find(e => e.date === dayItem.getDate() && isCurrentMonth);
-
-              return (
-                <div 
-                  key={dayItem.toString()} 
-                  onClick={() => handleDateClick(dayItem)}
-                  className={`
-                    flex flex-col items-center justify-start py-2 relative group rounded-xl transition-all cursor-pointer
-                    ${!isCurrentMonth && view === 'month' ? 'opacity-20' : 'hover:bg-primary-50'}
-                  `}
-                >
-                  <span className={`
-                    w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium mb-1 transition-all
-                    ${isDayToday ? 'bg-primary text-white shadow-lg scale-110' : 'text-main group-hover:bg-white group-hover:shadow-sm'}
-                  `}>
-                    {format(dayItem, dateFormat)}
-                  </span>
-
-                  {/* Dot Indicators for Events */}
-                  <div className="flex gap-1 h-2">
-                    {dayEvents && (
-                        <>
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                            {dayEvents.count > 1 && <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>}
-                        </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-    );
-  };
+  const monthLabel = cursor.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const weekDays = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 
   return (
-    <div className="animate-fade-in flex flex-col gap-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Calendar Column */}
+    <div className="card" style={{ padding: '16px' }}>
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: '1.1rem', textTransform: 'capitalize' }}>{monthLabel}</div>
+          <div className="text-secondary" style={{ fontSize: '0.9rem' }}>Selecciona un dia para abrir el planificador</div>
+        </div>
+        <div className="flex" style={{ gap: '8px' }}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={prevMonth}>Anterior</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={nextMonth}>Siguiente</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7" style={{ gap: '8px', marginBottom: '10px' }}>
+        {weekDays.map(d => (
+          <div key={d} className="text-secondary" style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'center' }}>{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7" style={{ gap: '8px' }}>
+        {days.days.map(d => {
+          const inMonth = d.getMonth() === days.month;
+          const key = formatDate(d);
+          const isToday = key === todayKey;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onPickDate(d)}
+              className="btn"
+              style={{
+                padding: '10px 0',
+                borderRadius: '14px',
+                borderColor: isToday ? 'var(--primary-500)' : 'var(--border-color)',
+                background: isToday ? 'var(--primary-50)' : 'var(--bg-card)',
+                color: inMonth ? 'var(--text-main)' : 'var(--text-muted)',
+                opacity: inMonth ? 1 : 0.55,
+                fontWeight: 800
+              }}
+              aria-label={`Dia ${d.getDate()}`}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ ingredientes: 0, platos: 0, clientes: 0 });
+  const [platosRecientes, setPlatosRecientes] = useState([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [ingredientes, platos, clientes] = await Promise.all([
+        api.ingredientes.list(),
+        api.platos.list(),
+        api.auth.listUsers({ rol: 'cliente' }),
+      ]);
+
+      setStats({
+        ingredientes: Array.isArray(ingredientes) ? ingredientes.length : 0,
+        platos: Array.isArray(platos) ? platos.length : 0,
+        clientes: Array.isArray(clientes?.items) ? clientes.items.length : 0,
+      });
+      setPlatosRecientes(Array.isArray(platos) ? platos.slice(0, 6) : []);
+    } catch (error) {
+      console.error('Error loading admin dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'grid', gap: '16px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card" style={{ boxShadow: 'none' }}>
+          <div className="text-secondary" style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ingredientes</div>
+          <div style={{ fontWeight: 900, fontSize: '2rem', marginTop: '8px' }}>{stats.ingredientes}</div>
+        </div>
+        <div className="card" style={{ boxShadow: 'none' }}>
+          <div className="text-secondary" style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Platos</div>
+          <div style={{ fontWeight: 900, fontSize: '2rem', marginTop: '8px' }}>{stats.platos}</div>
+        </div>
+        <div className="card" style={{ boxShadow: 'none' }}>
+          <div className="text-secondary" style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Clientes</div>
+          <div style={{ fontWeight: 900, fontSize: '2rem', marginTop: '8px' }}>{stats.clientes}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {renderCalendar()}
+          <AdminCalendar onPickDate={(d) => navigate(`/planificador?date=${formatDate(d)}`)} />
+        </div>
+        <div className="card" style={{ padding: '16px' }}>
+          <div className="card-header" style={{ marginBottom: '12px' }}>
+            <h3 className="card-title" style={{ fontSize: '1.05rem' }}>Platos recientes</h3>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate('/platos')}>Ver todos</button>
+          </div>
+
+          {platosRecientes.length === 0 ? (
+            <div className="text-secondary">No hay platos creados.</div>
+          ) : (
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {platosRecientes.map(p => (
+                <div key={p.id} style={{ padding: '12px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--bg-input)' }}>
+                  <div style={{ fontWeight: 900, marginBottom: '6px' }}>{p.nombre}</div>
+                  <div className="text-secondary" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="badge badge-secondary">{Math.round(p.calorias_totales)} kcal</span>
+                    {(Array.isArray(p.momentos_dia) && p.momentos_dia.length ? p.momentos_dia : (p.momento_dia ? [p.momento_dia] : [])).slice(0, 2).map(m => (
+                      <span key={m} className="badge badge-primary">{m}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientDashboard({ user }) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [resumen, setResumen] = useState(null);
+
+  useEffect(() => {
+    load();
+  }, [user?.id]);
+
+  async function load() {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const semanaInicio = getMonday(new Date());
+      const data = await api.planificacion.resumen(user.id, formatDate(semanaInicio));
+      setResumen(data);
+    } catch (error) {
+      console.error('Error loading client dashboard:', error);
+      setResumen(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const today = new Date();
+  const dayKey = dayKeyFromDate(today);
+  const dayData = resumen?.dias?.find(d => d.dia === dayKey) || { calorias_totales: 0, comidas: [] };
+  const dailyTarget = user?.calorias_objetivo || user?.calorias_mantenimiento || 2000;
+
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'grid', gap: '16px' }}>
+      <div
+        className="card"
+        style={{
+          background: 'linear-gradient(135deg, var(--primary-50) 0%, var(--bg-card) 60%)',
+          borderColor: 'rgba(249, 115, 22, 0.25)'
+        }}
+      >
+        <div className="flex flex-col md:flex-row" style={{ gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: '1.25rem', textTransform: 'capitalize' }}>
+              {today.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </div>
+            <div className="text-secondary">Resumen de hoy</div>
+          </div>
+
+          <div style={{ width: '100%', maxWidth: 420 }}>
+            <CalorieBar total={dayData.calorias_totales} objetivo={dailyTarget} />
+          </div>
+
+          <div className="flex" style={{ gap: '10px' }}>
+            <button type="button" className="btn btn-primary" onClick={() => navigate(`/planificador?date=${formatDate(today)}`)}>
+              Abrir plan
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate('/entrenamiento')}>
+              Entrenamiento
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Comidas de hoy</h3>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate(`/planificador?date=${formatDate(today)}`)}>
+            Ver planificador
+          </button>
         </div>
 
-        {/* Side Panel - Summary */}
-        <div className="flex flex-col gap-6">
-          <div className="card bg-gradient-to-br from-white to-gray-50 border border-border/50 shadow-sm">
-            <div className="card-header border-b border-border/50 pb-4 mb-4">
-              <h3 className="card-title text-base font-bold flex items-center gap-2">
-                <span>⚡</span> Pendientes
-              </h3>
-              <button className="btn btn-ghost btn-sm text-[10px]" onClick={() => navigate('/planificador')}>Ver Todo</button>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              {tasks.length > 0 ? tasks.map(task => (
-                <div key={task.id} className="flex items-center gap-3 p-3 bg-white border border-border rounded-xl shadow-sm hover:border-primary transition-all cursor-pointer" onClick={() => navigate('/planificador')}>
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${task.type === 'confirmed' ? 'bg-green-100' : 'bg-orange-100'}`}>
-                      {task.category === 'Videollamada' ? '📹' : '📞'}
-                   </div>
-                   <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-0.5">
-                         <span className="font-bold text-sm truncate">{task.client}</span>
-                         <span className="text-[10px] font-bold text-secondary">{task.time}</span>
-                      </div>
-                      <div className="text-xs text-secondary truncate">{task.category} · {task.duration}</div>
-                   </div>
-                </div>
-              )) : (
-                  <p className="text-secondary text-center text-sm py-4">No hay pendientes urgentes.</p>
-              )}
-              
-              <button className="btn btn-primary w-full mt-2" onClick={() => navigate('/planificador')}>
-                Ir al Planificador
-              </button>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {MOMENTOS.map(momento => {
+            const comida = dayData.comidas.find(c => c.momento === momento);
+            return (
+              <div key={momento} className="card" style={{ background: 'var(--bg-input)', boxShadow: 'none' }}>
+                <div className="badge badge-secondary" style={{ marginBottom: '10px' }}>{MOMENTOS_DISPLAY[momento]}</div>
+                {comida ? (
+                  <>
+                    <div style={{ fontWeight: 900, marginBottom: '6px' }}>{comida.plato_nombre}</div>
+                    <div className="text-secondary" style={{ fontWeight: 800 }}>{Math.round(comida.calorias)} kcal</div>
+                  </>
+                ) : (
+                  <div className="text-secondary">Sin asignar</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -301,31 +348,22 @@ function AdminDashboard({ user, navigate }) {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const isAdmin = api.auth.isAdmin();
   const user = api.auth.getUser();
 
   return (
     <div>
-      <header className="page-header flex justify-between items-center">
+      <header className="page-header">
         <div>
-            <h1 className="page-title">Hola, {user?.nombre?.split(' ')[0] || 'Usuario'} 👋</h1>
-            <p className="page-subtitle">
-            {isAdmin 
-                ? 'Panel de control de NutriOrxata' 
-                : 'Vamos a por tus objetivos de hoy.'}
-            </p>
+          <h1 className="page-title">Hola, {user?.nombre?.split(' ')[0] || 'Usuario'}</h1>
+          <p className="page-subtitle">{isAdmin ? 'Panel de control' : 'Tu resumen diario'}</p>
         </div>
-        <div className="date-badge text-secondary font-medium">
-            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+        <div className="date-badge">
+          {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
         </div>
       </header>
 
-      {isAdmin ? (
-        <AdminDashboard user={user} navigate={navigate} />
-      ) : (
-        <ClientDashboard user={user} navigate={navigate} />
-      )}
+      {isAdmin ? <AdminDashboard /> : <ClientDashboard user={user} />}
     </div>
   );
 }

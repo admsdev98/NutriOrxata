@@ -3,11 +3,11 @@ import api from '../api/client';
 
 const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
 const MOMENTOS_DISPLAY = {
-  desayuno: { icon: '🌅', label: 'Desayuno', color: 'bg-orange-100 text-orange-700' },
-  almuerzo: { icon: '🥪', label: 'Almuerzo', color: 'bg-blue-100 text-blue-700' },
-  comida: { icon: '☀️', label: 'Comida', color: 'bg-yellow-100 text-yellow-700' },
-  merienda: { icon: '🍎', label: 'Merienda', color: 'bg-orange-100 text-orange-700' },
-  cena: { icon: '🌙', label: 'Cena', color: 'bg-indigo-100 text-indigo-700' },
+  desayuno: { label: 'Desayuno', color: 'bg-orange-100 text-orange-700' },
+  almuerzo: { label: 'Almuerzo', color: 'bg-blue-100 text-blue-700' },
+  comida: { label: 'Comida', color: 'bg-yellow-100 text-yellow-700' },
+  merienda: { label: 'Merienda', color: 'bg-orange-100 text-orange-700' },
+  cena: { label: 'Cena', color: 'bg-indigo-100 text-indigo-700' },
 };
 
 function normalizeText(value) {
@@ -115,12 +115,12 @@ function PlatoModal({ plato, onClose, onSave }) {
   ).slice(0, 10);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-lg flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        <div className="modal-header shrink-0">
-            <h2 className="modal-title text-xl font-bold text-primary-600">{plato?.id ? '✏️ Editar Plato' : '🍽️ Nuevo Plato'}</h2>
-            <button className="btn-icon" onClick={onClose}>✕</button>
-        </div>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal modal-lg flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+          <div className="modal-header shrink-0">
+            <h2 className="modal-title text-xl font-bold text-primary-600">{plato?.id ? 'Editar Plato' : 'Nuevo Plato'}</h2>
+            <button className="btn-icon" onClick={onClose}>X</button>
+          </div>
         
         <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
             <div className="modal-body overflow-y-auto custom-scrollbar">
@@ -145,7 +145,7 @@ function PlatoModal({ plato, onClose, onSave }) {
                                 onClick={() => toggleMomento(m)}
                                 className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${form.momentos_dia.includes(m) ? 'bg-primary text-white border-primary' : 'bg-white text-secondary border-border hover:border-primary'}`}
                             >
-                                {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
+                                {MOMENTOS_DISPLAY[m].label}
                             </button>
                         ))}
                     </div>
@@ -159,12 +159,11 @@ function PlatoModal({ plato, onClose, onSave }) {
                     
                     <div className="relative mb-4">
                         <input 
-                            className="form-input pl-8" 
+                            className="form-input" 
                             placeholder="Buscar ingrediente para añadir..." 
                             value={searchIng}
                             onChange={e => setSearchIng(e.target.value)}
                         />
-                         <span className="absolute left-3 top-3 text-secondary">🔍</span>
                         
                         {searchIng && (
                             <div className="absolute top-full left-0 right-0 bg-white border border-border shadow-lg rounded-lg mt-1 z-10 max-h-48 overflow-y-auto">
@@ -200,7 +199,7 @@ function PlatoModal({ plato, onClose, onSave }) {
                                         onChange={e => updateCantidad(idx, e.target.value)}
                                     />
                                     <span className="text-xs text-secondary">g</span>
-                                    <button type="button" onClick={() => removeIngrediente(idx)} className="text-error hover:bg-error-50 rounded p-1">✕</button>
+                                    <button type="button" onClick={() => removeIngrediente(idx)} className="text-error hover:bg-error-50 rounded p-1">X</button>
                                 </div>
                             </div>
                         ))}
@@ -290,12 +289,11 @@ function Platos() {
             <div className="flex gap-4 flex-col md:flex-row">
                  <div className="relative flex-1">
                     <input 
-                        className="form-input pl-10" 
+                        className="form-input" 
                         placeholder="Buscar plato..." 
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
-                    <span className="absolute left-3 top-3 text-secondary">🔍</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
                     <button 
@@ -307,10 +305,10 @@ function Platos() {
                     {MOMENTOS.map(m => (
                         <button
                              key={m}
-                             className={`px-3 py-2 rounded-full text-sm font-medium border whitespace-nowrap ${filterMomento === m ? 'bg-primary text-white border-primary' : 'bg-white text-secondary hover:border-primary'}`}
-                             onClick={() => setFilterMomento(m)}
+                              className={`px-3 py-2 rounded-full text-sm font-medium border whitespace-nowrap ${filterMomento === m ? 'bg-primary text-white border-primary' : 'bg-white text-secondary hover:border-primary'}`}
+                              onClick={() => setFilterMomento(m)}
                         >
-                            {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
+                            {MOMENTOS_DISPLAY[m].label}
                         </button>
                     ))}
                 </div>
@@ -332,10 +330,25 @@ function Platos() {
                                      ))}
                                  </div>
                              </div>
-                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white p-1 rounded border shadow-sm">
-                                 <button onClick={() => { setEditingItem(plato); setModalOpen(true); }} className="hover:bg-input p-1 rounded text-lg" title="Editar">✏️</button>
-                                 <button onClick={() => handleDelete(plato.id)} className="hover:bg-error-50 text-error p-1 rounded text-lg" title="Borrar">🗑️</button>
-                             </div>
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 bg-white p-1 rounded border shadow-sm">
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingItem(plato); setModalOpen(true); }}
+                                    className="btn btn-secondary btn-sm"
+                                    title="Editar"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(plato.id)}
+                                    className="btn btn-secondary btn-sm"
+                                    title="Borrar"
+                                    style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}
+                                  >
+                                    Borrar
+                                  </button>
+                              </div>
                          </div>
                          
                          <div className="p-4">

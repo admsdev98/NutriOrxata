@@ -122,24 +122,24 @@ function ClienteDetalle() {
 
       {/* TABS */}
       <div className="flex gap-1 mb-6 border-b border-border overflow-x-auto no-scrollbar">
-         <button 
-            className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'profile' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
-            onClick={() => setActiveTab('profile')}
-         >
-            👤 Perfil & Datos
-         </button>
-         <button 
-            className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'nutrition' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
-            onClick={() => setActiveTab('nutrition')}
-         >
-            🥗 Plan Nutricional
-         </button>
-         <button 
-            className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'workout' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
-            onClick={() => setActiveTab('workout')}
-         >
-            💪 Entrenamiento
-         </button>
+          <button 
+             className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'profile' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
+             onClick={() => setActiveTab('profile')}
+          >
+             Perfil y datos
+          </button>
+          <button 
+             className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'nutrition' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
+             onClick={() => setActiveTab('nutrition')}
+          >
+             Plan nutricional
+          </button>
+          <button 
+             className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'workout' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
+             onClick={() => setActiveTab('workout')}
+          >
+             Entrenamiento
+          </button>
       </div>
 
       {/* CONTENT */}

@@ -68,7 +68,7 @@ function ClientProfilePanel({ user, onSave }) {
       {/* BASIC INFO */}
       <section className="card p-6">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            👤 Información Personal
+            Información personal
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="form-group">
@@ -116,7 +116,7 @@ function ClientProfilePanel({ user, onSave }) {
       {/* PHYSICAL DATA */}
       <section className="card p-6">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            📏 Datos Físicos
+            Datos físicos
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="form-group">
@@ -164,7 +164,7 @@ function ClientProfilePanel({ user, onSave }) {
       {/* EXTRA INFO */}
       <section className="card p-6">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            📋 Información Adicional
+            Información adicional
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group">
