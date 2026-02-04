@@ -50,128 +50,93 @@ function IngredienteModal({ ingrediente, onClose, onSave }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">
+          <h2 className="modal-title font-bold text-xl text-primary-600">
             {ingrediente?.id ? '✏️ Editar Ingrediente' : '➕ Nuevo Ingrediente'}
           </h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="btn-icon" onClick={onClose}>✕</button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+        <form onSubmit={handleSubmit} className="modal-body space-y-4">
             <div className="form-group">
-              <label className="form-label">Nombre del producto</label>
-              <input
-                type="text"
-                className="form-input"
-                value={form.nombre}
-                onChange={e => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Ej: Macarrones integrales Hacendado"
-                required
-              />
+                <label className="form-label">Nombre del producto</label>
+                <input
+                    type="text"
+                    className="form-input font-medium"
+                    value={form.nombre}
+                    onChange={e => setForm({ ...form, nombre: e.target.value })}
+                    placeholder="Ej: Macarrones integrales Hacendado"
+                    required
+                />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Categoría</label>
-                <select
-                  className="form-select"
-                  value={form.categoria}
-                  onChange={e => setForm({ ...form, categoria: e.target.value })}
-                >
-                  {CATEGORIAS.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Supermercado</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={form.supermercado}
-                  onChange={e => setForm({ ...form, supermercado: e.target.value })}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                    <label className="form-label">Categoría</label>
+                    <select
+                        className="form-select"
+                        value={form.categoria}
+                        onChange={e => setForm({ ...form, categoria: e.target.value })}
+                    >
+                        {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Supermercado</label>
+                    <input
+                        type="text"
+                        className="form-input"
+                        value={form.supermercado}
+                        onChange={e => setForm({ ...form, supermercado: e.target.value })}
+                    />
+                </div>
             </div>
 
-            <h4 style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-              📊 Información Nutricional (por 100g)
-            </h4>
-
-            <div className="form-row-4">
-              <div className="form-group">
-                <label className="form-label">Calorías (kcal)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-input"
-                  value={form.calorias_por_100g}
-                  onChange={e => setForm({ ...form, calorias_por_100g: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Proteínas (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-input"
-                  value={form.proteinas_por_100g}
-                  onChange={e => setForm({ ...form, proteinas_por_100g: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Carbohidratos (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-input"
-                  value={form.carbohidratos_por_100g}
-                  onChange={e => setForm({ ...form, carbohidratos_por_100g: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Grasas (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-input"
-                  value={form.grasas_por_100g}
-                  onChange={e => setForm({ ...form, grasas_por_100g: e.target.value })}
-                />
-              </div>
+            <div className="bg-input p-4 rounded-lg border border-border mt-2">
+                <h4 className="text-secondary font-semibold text-sm mb-3 uppercase tracking-wide">
+                📊 Información Nutricional (por 100g)
+                </h4>
+                <div className="grid grid-cols-4 gap-2">
+                    <div className="form-group">
+                        <label className="form-label text-xs">Calorías</label>
+                        <input
+                             type="number" step="0.1" className="form-input text-center"
+                             value={form.calorias_por_100g}
+                             onChange={e => setForm({ ...form, calorias_por_100g: e.target.value })}
+                             required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label text-xs">Prot (g)</label>
+                        <input
+                             type="number" step="0.1" className="form-input text-center"
+                             value={form.proteinas_por_100g}
+                             onChange={e => setForm({ ...form, proteinas_por_100g: e.target.value })}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label text-xs">Carb (g)</label>
+                        <input
+                             type="number" step="0.1" className="form-input text-center"
+                             value={form.carbohidratos_por_100g}
+                             onChange={e => setForm({ ...form, carbohidratos_por_100g: e.target.value })}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label text-xs">Grasas (g)</label>
+                        <input
+                             type="number" step="0.1" className="form-input text-center"
+                             value={form.grasas_por_100g}
+                             onChange={e => setForm({ ...form, grasas_por_100g: e.target.value })}
+                        />
+                    </div>
+                </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Fibra (g) - opcional</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-input"
-                  value={form.fibra_por_100g}
-                  onChange={e => setForm({ ...form, fibra_por_100g: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Notas</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={form.notas || ''}
-                  onChange={e => setForm({ ...form, notas: e.target.value })}
-                  placeholder="Notas adicionales..."
-                />
-              </div>
+            <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                    {saving ? 'Guardando...' : 'Guardar Ingrediente'}
+                </button>
             </div>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Guardando...' : 'Guardar ingrediente'}
-            </button>
-          </div>
         </form>
       </div>
     </div>
@@ -198,23 +163,13 @@ function Ingredientes() {
       const data = await api.ingredientes.list(params);
       setIngredientes(data);
     } catch (error) {
-      console.error('Error loading ingredientes:', error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleEdit(item) {
-    setEditingItem(item);
-    setModalOpen(true);
-  }
-
-  function handleNew() {
-    setEditingItem(null);
-    setModalOpen(true);
-  }
-
-  async function handleDelete(id) {
+  const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este ingrediente?')) return;
     try {
       await api.ingredientes.delete(id);
@@ -222,17 +177,13 @@ function Ingredientes() {
     } catch (error) {
       alert('Error: ' + error.message);
     }
-  }
+  };
 
-  function handleModalClose() {
+  const handleSave = () => {
     setModalOpen(false);
     setEditingItem(null);
-  }
-
-  function handleSave() {
-    handleModalClose();
     loadIngredientes();
-  }
+  };
 
   const grouped = ingredientes.reduce((acc, ing) => {
     const cat = ing.categoria || 'Otros';
@@ -242,95 +193,98 @@ function Ingredientes() {
   }, {});
 
   return (
-    <div>
-      <header className="page-header">
-        <div className="flex flex-between flex-center">
-          <div>
-            <h1 className="page-title">📦 Ingredientes</h1>
-            <p className="page-subtitle">Gestiona los ingredientes de Mercadona</p>
-          </div>
-          <button className="btn btn-primary" onClick={handleNew}>
-            + Añadir ingrediente
-          </button>
-        </div>
-      </header>
-
-      <div className="search-bar">
-        <span className="search-icon">🔍</span>
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Buscar ingrediente..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="category-filter">
-        <button
-          className={`category-btn ${categoriaFilter === '' ? 'active' : ''}`}
-          onClick={() => setCategoriaFilter('')}
-        >
-          Todos
-        </button>
-        {CATEGORIAS.map(cat => (
-          <button
-            key={cat}
-            className={`category-btn ${categoriaFilter === cat ? 'active' : ''}`}
-            onClick={() => setCategoriaFilter(cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="loading"><div className="spinner"></div></div>
-      ) : ingredientes.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📦</div>
-          <h3 className="empty-state-title">No hay ingredientes</h3>
-          <p>Añade tu primer ingrediente para empezar</p>
-        </div>
-      ) : (
-        <div>
-          {Object.entries(grouped).map(([categoria, items]) => (
-            <div key={categoria} style={{ marginBottom: '32px' }}>
-              <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-                {categoria} ({items.length})
-              </h3>
-              <div className="grid grid-2">
-                {items.map(ing => (
-                  <div key={ing.id} className="card">
-                    <div className="flex flex-between flex-center" style={{ marginBottom: '8px' }}>
-                      <h4>{ing.nombre}</h4>
-                      <div className="flex gap-2">
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(ing)}>
-                          Editar
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(ing.id)}>
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-                      Por 100g: {Math.round(ing.calorias_por_100g)} kcal | 
-                      {Math.round(ing.proteinas_por_100g)}g prot | 
-                      {Math.round(ing.carbohidratos_por_100g)}g carb | 
-                      {Math.round(ing.grasas_por_100g)}g grasas
-                    </p>
-                  </div>
-                ))}
-              </div>
+    <div className="animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h1 className="page-title">Ingredientes</h1>
+                <p className="page-subtitle">Gestiona tu base de datos de alimentos</p>
             </div>
-          ))}
+            <button className="btn btn-primary" onClick={() => { setEditingItem(null); setModalOpen(true); }}>
+                + Nuevo Ingrediente
+            </button>
         </div>
-      )}
+
+        <div className="card p-4 mb-6">
+            <div className="flex gap-4 flex-col md:flex-row">
+                <div className="relative flex-1">
+                    <input 
+                        type="text" 
+                        className="form-input pl-10" 
+                        placeholder="Buscar ingrediente..." 
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <span className="absolute left-3 top-3 text-secondary">🔍</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                    <button 
+                        className={`px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${categoriaFilter === '' ? 'bg-primary text-white border-primary' : 'bg-white text-secondary border-border hover:border-primary'}`}
+                        onClick={() => setCategoriaFilter('')}
+                    >
+                        Todos
+                    </button>
+                    {CATEGORIAS.map(cat => (
+                        <button
+                            key={cat}
+                            className={`px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${categoriaFilter === cat ? 'bg-primary text-white border-primary' : 'bg-white text-secondary border-border hover:border-primary'}`}
+                            onClick={() => setCategoriaFilter(cat)}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {loading ? <div className="spinner mx-auto"></div> : (
+            <div>
+                {Object.entries(grouped).map(([categoria, items]) => (
+                    <div key={categoria} className="mb-8">
+                        <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
+                            {categoria} 
+                            <span className="text-xs bg-input px-2 py-1 rounded-full text-secondary font-normal">{items.length}</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {items.map(ing => (
+                                <div key={ing.id} className="card p-4 hover:shadow-md transition-all group relative">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-main">{ing.nombre}</h4>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 absolute top-2 right-2 bg-white p-1 rounded shadow-sm border border-border">
+                                            <button onClick={() => { setEditingItem(ing); setModalOpen(true); }} className="text-sm p-1 hover:text-primary">✏️</button>
+                                            <button onClick={() => handleDelete(ing.id)} className="text-sm p-1 hover:text-error">🗑️</button>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-secondary mb-3">{ing.supermercado || 'Genérico'}</div>
+                                    <div className="flex justify-between items-center text-sm bg-input rounded p-2">
+                                        <div className="text-center px-2 border-r border-border last:border-0">
+                                            <div className="font-bold text-primary">{Math.round(ing.calorias_por_100g)}</div>
+                                            <div className="text-[10px] uppercase text-secondary">kcal</div>
+                                        </div>
+                                        <div className="text-center px-2 border-r border-border last:border-0">
+                                            <div className="font-bold">{Math.round(ing.proteinas_por_100g)}</div>
+                                            <div className="text-[10px] uppercase text-secondary">PRO</div>
+                                        </div>
+                                        <div className="text-center px-2 border-r border-border last:border-0">
+                                            <div className="font-bold">{Math.round(ing.carbohidratos_por_100g)}</div>
+                                            <div className="text-[10px] uppercase text-secondary">CARB</div>
+                                        </div>
+                                        <div className="text-center px-2">
+                                            <div className="font-bold">{Math.round(ing.grasas_por_100g)}</div>
+                                            <div className="text-[10px] uppercase text-secondary">FAT</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
 
       {modalOpen && (
         <IngredienteModal
           ingrediente={editingItem}
-          onClose={handleModalClose}
+          onClose={() => setModalOpen(false)}
           onSave={handleSave}
         />
       )}

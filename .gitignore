@@ -16,3 +16,8 @@ Thumbs.db
 
 .env
 .env.*
+
+# Local AI/CLI tooling
+.gemini/
+.opencode/
+skills/

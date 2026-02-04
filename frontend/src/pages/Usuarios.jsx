@@ -4,510 +4,248 @@ import UserProfileModal from '../components/UserProfileModal';
 import UserGoalsModal from '../components/UserGoalsModal';
 import UserPlatosModal from '../components/UserPlatosModal';
 
-const OBJECTIVE_LABELS = {
-  mantenimiento: 'Mantenimiento',
-  definicion: 'Definicion',
-  volumen: 'Volumen',
-};
-
-function formatObjective(value) {
-  if (!value) return '';
-  const normalized = `${value}`.toLowerCase();
-  if (OBJECTIVE_LABELS[normalized]) return OBJECTIVE_LABELS[normalized];
-  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
-}
-
 function Usuarios() {
-  const ENABLE_PLATOS_BUTTON = true;
-  // State for Admins
+  // State
   const [admins, setAdmins] = useState([]);
-  
-  // State for Clients (with pagination)
   const [clientes, setClientes] = useState([]);
   const [clientPage, setClientPage] = useState(1);
   const [clientTotal, setClientTotal] = useState(0);
-  const [clientSearch, setClientSearch] = useState('');
-  const LIMIT = 10;
-
-  // Shared State
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [loadingClients, setLoadingClients] = useState(false);
+  
+  // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Modals state
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [showPlatosModal, setShowPlatosModal] = useState(false);
-  const isModalOpen = showCreateModal || showProfileModal || showGoalsModal || showPlatosModal;
-  
-  // Form state for creation
-  const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    password: '',
-    rol: 'cliente',
-  });
-  const [error, setError] = useState('');
+  const [modalType, setModalType] = useState(null); // 'profile' | 'goals' | 'platos'
+
   const currentUser = api.auth.getUser();
 
-  // Initial Load
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  // Stats placeholders (could be derived from data)
+  const stats = [
+    { label: 'Total Clientes', value: clientTotal, icon: '👥', color: 'var(--accent-info)' },
+    { label: 'Activos', value: clientes.filter(c => c.activo).length, icon: '📈', color: 'var(--accent-success)' },
+    { label: 'Objetivo Definición', value: clientes.filter(c => c.objetivo === 'definicion').length, icon: '⚖️', color: 'var(--accent-warning)' },
+    { label: 'Nuevos (Mes)', value: '+4', icon: '✨', color: 'var(--accent-primary)' },
+  ];
 
   useEffect(() => {
-    if (isModalOpen) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
-    }
+    loadData();
+  }, [clientPage, search]);
 
-    return () => {
-      document.body.classList.remove('modal-open');
-    };
-  }, [isModalOpen]);
-
-  // Effect to reload clients when page or search changes
-  useEffect(() => {
-    loadClients();
-  }, [clientPage, clientSearch]);
-
-  async function loadInitialData() {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const adminsData = await api.auth.listUsers({ rol: 'admin' });
-      setAdmins(adminsData.items || []);
-      await loadClients();
-    } catch (err) {
-      console.error(err);
+        const [adminsData, clientsData] = await Promise.all([
+            api.auth.listUsers({ rol: 'admin' }),
+            api.auth.listUsers({ rol: 'cliente', skip: (clientPage - 1) * 10, limit: 10, search })
+        ]);
+        setAdmins(adminsData.items || []);
+        setClientes(clientsData.items || []);
+        setClientTotal(clientsData.total || 0);
+    } catch (e) {
+        console.error(e);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  }
+  };
 
-  async function loadClients() {
-    try {
-      setLoadingClients(true);
-      const skip = (clientPage - 1) * LIMIT;
-      const response = await api.auth.listUsers({
-        rol: 'cliente',
-        skip,
-        limit: LIMIT,
-        search: clientSearch
-      });
-      
-      setClientes(response.items || []);
-      setClientTotal(response.total || 0);
-    } catch (err) {
-      console.error("Error loading clients:", err);
-    } finally {
-      setLoadingClients(false);
-    }
-  }
-
-  function handleSearchChange(e) {
-    setClientSearch(e.target.value);
-    setClientPage(1); // Reset to first page on search
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    
-    try {
-      const payload = {
-        ...formData,
-        rol: formData.rol === 'usuario' ? 'cliente' : formData.rol
+  const handleCreate = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+          nombre: form.nombre.value,
+          email: form.email.value,
+          password: form.password.value,
+          rol: form.rol.value
       };
       
-      await api.auth.register(payload);
-      setShowCreateModal(false);
-      setFormData({
-        nombre: '',
-        email: '',
-        password: '',
-        rol: 'cliente',
-      });
-      
-      // Reload appropriate list
-      if (payload.rol === 'admin') {
-        const adminsData = await api.auth.listUsers({ rol: 'admin' });
-        setAdmins(adminsData.items || []);
-      } else {
-        loadClients();
+      try {
+          await api.auth.register(data);
+          setShowCreateModal(false);
+          loadData();
+      } catch (err) {
+          alert(err.message);
       }
-      
-    } catch (err) {
-      setError(err.message || 'Error al crear usuario');
-    }
-  }
-
-  async function handleDelete(id, isClient) {
-    const confirmMessage = isClient
-      ? '¿Estás seguro de ELIMINAR este cliente?'
-      : '¿Estás seguro de ELIMINAR este usuario?';
-    if (!window.confirm(confirmMessage)) return;
-    try {
-      await api.auth.deleteUser(id);
-      if (isClient) {
-        loadClients();
-      } else {
-        const adminsData = await api.auth.listUsers({ rol: 'admin' });
-        setAdmins(adminsData.items || []);
-      }
-    } catch (err) {
-      alert(err.message);
-    }
-  }
-
-  async function toggleActive(u, isClient) {
-    try {
-      await api.auth.updateUser(u.id, { activo: !u.activo });
-      if (isClient) {
-        loadClients(); // Reload to reflect changes if needed
-        // Or optimistically update:
-        setClientes(prev => prev.map(c => c.id === u.id ? {...c, activo: !c.activo} : c));
-      } else {
-        setAdmins(prev => prev.map(a => a.id === u.id ? {...a, activo: !a.activo} : a));
-      }
-    } catch (err) {
-      alert("Error al cambiar estado: " + err.message);
-    }
-  }
-
-  const openProfile = (u) => {
-    setSelectedUser(u);
-    setShowProfileModal(true);
   };
 
-  const openGoals = (u) => {
-    setSelectedUser(u);
-    setShowGoalsModal(true);
+  const handleDelete = async (id) => {
+      if(!confirm('¿Eliminar usuario irreversiblemente?')) return;
+      try {
+          await api.auth.deleteUser(id);
+          loadData();
+      } catch(e) { alert(e.message); }
   };
 
-  const openPlatos = (u) => {
-    setSelectedUser(u);
-    setShowPlatosModal(true);
+  const toggleActive = async (u) => {
+      try {
+          await api.auth.updateUser(u.id, { activo: !u.activo });
+          loadData();
+      } catch(e) { alert(e.message); }
   };
 
-  // Helper for icons
-  const Icons = {
-    Trash: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-    ),
-    User: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    ),
-    Target: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-    ),
-    Search: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    ),
-    Plus: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-    ),
-    Plate: () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M8 7h8"/></svg>
-    )
-  };
-
-  const ClientRow = ({ user }) => (
-    <div className="usuarios-row">
-      <div className="usuarios-cell usuarios-cell-main">
-        <div className="usuarios-row-title">{user.nombre} {user.apellidos}</div>
-        <div className="usuarios-row-sub text-muted">{user.email}</div>
-      </div>
-      <div className="usuarios-cell">
-        {user.objetivo ? (
-          <span className="badge badge-secondary text-xs">{formatObjective(user.objetivo)}</span>
-        ) : (
-          <span className="text-muted text-xs">Sin Objetivo</span>
-        )}
-      </div>
-      <div className="usuarios-cell">
-        <button
-          type="button"
-          className={`badge ${user.activo ? 'badge-primary' : 'badge-danger'} usuarios-status-btn`}
-          onClick={() => toggleActive(user, true)}
-        >
-          {user.activo ? 'Activo' : 'Inactivo'}
-        </button>
-      </div>
-      <div className="usuarios-cell usuarios-cell-actions">
-        <button 
-          className="btn btn-outline btn-sm user-action-btn"
-          onClick={() => openProfile(user)}
-          title="Editar Perfil"
-        >
-          <Icons.User /> Perfil
-        </button>
-        <button 
-          className="btn btn-outline btn-sm user-action-btn"
-          onClick={() => openGoals(user)}
-          title="Objetivos"
-        >
-          <Icons.Target /> Objetivos
-        </button>
-        {ENABLE_PLATOS_BUTTON && (
-        <button 
-          className="btn btn-outline btn-sm user-action-btn"
-          onClick={() => openPlatos(user)}
-          title="Planificador de platos semanales"
-        >
-          <Icons.Plate /> Planificador semanal
-        </button>
-        )}
-        <button 
-          className="btn btn-outline btn-sm user-action-btn user-action-delete"
-          onClick={() => handleDelete(user.id, true)}
-          title="Eliminar"
-        >
-          <Icons.Trash /> Eliminar
-        </button>
-      </div>
-    </div>
-  );
-
-  const AdminRow = ({ user }) => (
-    <div className="usuarios-row">
-      <div className="usuarios-cell usuarios-cell-main">
-        <div className="usuarios-row-title">{user.nombre} {user.apellidos}</div>
-        <div className="usuarios-row-sub text-muted">{user.email}</div>
-      </div>
-      <div className="usuarios-cell">
-        <span className="badge badge-primary text-xs">{user.rol}</span>
-      </div>
-      <div className="usuarios-cell">
-        <button
-          type="button"
-          className={`badge ${user.activo ? 'badge-primary' : 'badge-danger'} usuarios-status-btn`}
-          onClick={() => toggleActive(user, false)}
-        >
-          {user.activo ? 'Activo' : 'Inactivo'}
-        </button>
-      </div>
-      <div className="usuarios-cell usuarios-cell-actions">
-        <button
-          className="btn btn-outline btn-sm user-action-btn"
-          onClick={() => openProfile(user)}
-          title="Editar Perfil"
-        >
-          <Icons.User /> Perfil
-        </button>
-        <button
-          className="btn btn-outline btn-sm user-action-btn user-action-delete"
-          onClick={() => handleDelete(user.id, false)}
-          disabled={user.id === currentUser?.id}
-          title="Eliminar"
-        >
-          <Icons.Trash /> Eliminar
-        </button>
-      </div>
-    </div>
-  );
-
-  if (loading) return <div className="loading"><div className="spinner"></div></div>;
-
-  const totalPages = Math.ceil(clientTotal / LIMIT);
-
-  return (
-    <div className="usuarios-page">
-      <header className="page-header usuarios-header">
-        <div className="usuarios-hero">
-           <div>
-              <h1 className="page-title">Usuarios</h1>
-              <p className="page-subtitle">Gestión de accesos y clientes</p>
-           </div>
-           <button className="btn btn-primary usuarios-add-btn" onClick={() => setShowCreateModal(true)}>
-              <Icons.Plus /> <span className="hidden-mobile">Nuevo</span>
-           </button>
-        </div>
-      </header>
-
-      {/* ADMIN SECTION */}
-       {admins.length > 0 && (
-          <section className="usuarios-section usuarios-section--admin">
-            <div className="usuarios-section-header">
-              <h2 className="usuarios-section-title">🛡️ Administradores</h2>
-              <span className="usuarios-section-pill">Equipo interno</span>
-            </div>
-            <div className="usuarios-table">
-              <div className="usuarios-row usuarios-row-head">
-                <div className="usuarios-cell usuarios-cell-main">Administrador</div>
-                <div className="usuarios-cell">Rol</div>
-                <div className="usuarios-cell">Estado</div>
-                <div className="usuarios-cell usuarios-cell-actions">Acciones</div>
+  const UserTableRow = ({ u, isAdmin }) => {
+      const isSelected = selectedUser?.id === u.id;
+      return (
+          <div 
+            onClick={() => setSelectedUser(u)}
+            className={`flex items-center gap-4 p-4 border-b border-border hover:bg-hover transition-colors cursor-pointer group ${isSelected ? 'bg-primary-50 border-l-4 border-l-primary' : ''}`}
+          >
+              <div 
+                 className="shrink-0 flex items-center justify-center font-bold text-lg"
+                 style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-100)', color: 'var(--primary-600)' }}
+              >
+                  {u.nombre?.[0] || '?'}
               </div>
-              {admins.map(u => <AdminRow key={u.id} user={u} />)}
-            </div>
-          </section>
-      )}
+              
+              <div className="flex-1 min-w-0">
+                  <div className="font-semibold truncate">{u.nombre} {u.apellidos}</div>
+                  <div className="text-secondary text-xs truncate">{u.email}</div>
+              </div>
 
-      {/* CLIENTS SECTION */}
-      <section className="usuarios-section usuarios-section--clients">
-        <div className="usuarios-section-header">
-          <div>
-            <h2 className="usuarios-section-title">🥑 Clientes</h2>
-            <p className="usuarios-section-sub">Gestiona objetivos, planificador de platos y perfiles.</p>
-          </div>
-        </div>
-        <div className="usuarios-search usuarios-search-wide">
-          <input 
-            type="text" 
-            placeholder="Buscar cliente..." 
-            className="form-input usuarios-search-input" 
-            value={clientSearch}
-            onChange={handleSearchChange}
-          />
-          <div className="usuarios-search-icon">
-            <Icons.Search />
-          </div>
-        </div>
-
-        <div className="usuarios-list">
-             {loadingClients && (
-                <div className="usuarios-loading">
-                  <div className="spinner"></div>
+              {!isAdmin && (
+                <div className="hidden md:block w-32">
+                    <span className="badge badge-primary">{u.objetivo || 'No definido'}</span>
                 </div>
               )}
-              
-              {clientes.length === 0 ? (
-                  <div className="text-center p-8 text-muted bg-light rounded">No se encontraron clientes.</div>
-              ) : (
-                  <div className="usuarios-table">
-                    <div className="usuarios-row usuarios-row-head">
-                      <div className="usuarios-cell usuarios-cell-main">Cliente</div>
-                      <div className="usuarios-cell">Objetivo</div>
-                      <div className="usuarios-cell">Estado</div>
-                      <div className="usuarios-cell usuarios-cell-actions">Acciones</div>
-                    </div>
-                    {clientes.map(u => <ClientRow key={u.id} user={u} />)}
+
+              <div className="hidden md:block w-24">
+                  <span className={`badge ${u.activo ? 'badge-success' : 'badge-error'}`}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+              </div>
+
+              {/* Action Buttons for Clients */}
+              {!isAdmin && (
+                  <div className="flex gap-2">
+                       <a
+                         className="btn btn-sm btn-outline" 
+                         href={`/clientes/${u.id}`}
+                         onClick={(e) => e.stopPropagation()}
+                       >
+                         Ir al perfil de {u.nombre}
+                       </a>
                   </div>
               )}
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-                <div className="usuarios-pagination">
-                  <button 
-                    className="btn btn-outline btn-sm"
-                    disabled={clientPage === 1}
-                    onClick={() => setClientPage(p => p - 1)}
-                  >
-                    Anterior
-                  </button>
-                  <span className="text-muted text-sm">
-                    {clientPage} / {totalPages}
-                  </span>
-                  <button 
-                    className="btn btn-outline btn-sm"
-                    disabled={clientPage >= totalPages}
-                    onClick={() => setClientPage(p => p + 1)}
-                  >
-                    Siguiente
-                  </button>
-                </div>
-            )}
-        </div>
-      </section>
-
-      {/* CREATE MODAL */}
-      {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Nuevo Usuario</h3>
-              <button className="modal-close" onClick={() => setShowCreateModal(false)}>&times;</button>
-            </div>
-            {error && (
-              <div style={{ padding: '0 24px', color: 'var(--accent-danger)' }}>
-                {error}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="modal-body">
-              <div className="form-group">
-                <label>Nombre</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={formData.nombre}
-                  onChange={e => setFormData({...formData, nombre: e.target.value})}
-                  required 
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Email (con dominio @nutriorxata.com)</label>
-                <input 
-                  type="email" 
-                  className="form-input" 
-                  value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  required 
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Contraseña</label>
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  value={formData.password}
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                  required 
-                />
-              </div>
-
-              <div className="form-group">
-                  <label>Rol</label>
-                  <select 
-                    className="form-select"
-                    value={formData.rol}
-                    onChange={e => setFormData({...formData, rol: e.target.value})}
-                  >
-                    <option value="cliente">Cliente</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Crear Usuario
-                </button>
-              </div>
-            </form>
           </div>
+      );
+  };
+
+  return (
+    <div className="animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h1 className="page-title">Usuarios</h1>
+                <p className="page-subtitle">Gestión de clientes y administradores</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>+ Nuevo Usuario</button>
         </div>
-      )}
 
-      {/* PROFILE AND GOALS MODALS */}
-      {showProfileModal && selectedUser && (
-        <UserProfileModal 
-            user={selectedUser} 
-            onClose={() => setShowProfileModal(false)}
-            onSave={() => loadClients()} 
-        />
-      )}
+        <div className="flex flex-col gap-6">
+            <div className="flex-1 min-w-0 flex flex-col gap-8">
+                
+                {/* SEARCH */}
+                <div className="relative">
+                    <input 
+                        type="text" 
+                        className="form-input pl-10" 
+                        placeholder="Buscar por nombre o email..." 
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <span className="absolute left-3 top-2.5 text-secondary">🔍</span>
+                </div>
 
-      {showGoalsModal && selectedUser && (
-        <UserGoalsModal 
-            user={selectedUser} 
-            onClose={() => setShowGoalsModal(false)}
-            onSave={() => loadClients()}
-        />
-      )}
+                {/* ADMINS / TRABAJADORES SECTION */}
+                <div className="card p-0 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border bg-gray-50 flex justify-between items-center">
+                        <h3 className="font-bold text-main uppercase text-sm tracking-wider">Admin / Trabajadores</h3>
+                        <span className="badge badge-secondary">{admins.length}</span>
+                    </div>
+                    <div className="divide-y divide-border">
+                        {loading ? (
+                             <div className="p-4 text-center text-secondary text-sm">Cargando...</div>
+                        ) : admins.length > 0 ? (
+                            admins.map(a => <UserTableRow key={a.id} u={a} isAdmin={true} />)
+                        ) : (
+                            <div className="p-4 text-center text-secondary text-sm">No hay trabajadores</div>
+                        )}
+                    </div>
+                </div>
 
-      {showPlatosModal && selectedUser && (
-        <UserPlatosModal 
-            user={selectedUser} 
-            onClose={() => setShowPlatosModal(false)}
-            onSave={() => loadClients()}
-        />
-      )}
+                {/* CLIENTES SECTION */}
+                <div className="card p-0 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border bg-gray-50 flex justify-between items-center">
+                         <h3 className="font-bold text-main uppercase text-sm tracking-wider">Clientes</h3>
+                         <span className="badge badge-secondary">{clientTotal}</span>
+                    </div>
+                    <div className="divide-y divide-border">
+                        {loading ? (
+                             <div className="p-8 text-center"><div className="spinner" /></div>
+                        ) : clientes.length > 0 ? (
+                            clientes.map(c => <UserTableRow key={c.id} u={c} isAdmin={false} />)
+                        ) : (
+                            <div className="p-8 text-center text-secondary">No hay clientes registrados</div>
+                        )}
+                    </div>
+                    
+                    {/* Pagination */}
+                    {clientTotal > 10 && (
+                        <div className="flex justify-between items-center p-4 bg-gray-50 border-t border-border">
+                            <button disabled={clientPage === 1} onClick={() => setClientPage(p => p - 1)} className="btn btn-secondary btn-sm">Anterior</button>
+                            <span className="text-xs font-medium text-secondary">Página {clientPage}</span>
+                            <button disabled={clientes.length < 10} onClick={() => setClientPage(p => p + 1)} className="btn btn-secondary btn-sm">Siguiente</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+
+        </div>
+
+        {/* CREATE USER MODAL */}
+        {showCreateModal && (
+            <div className="modal-overlay">
+                <div className="modal">
+                    <div className="modal-header">
+                        <h2 className="modal-title">Nuevo Usuario</h2>
+                        <button className="btn-icon" onClick={() => setShowCreateModal(false)}>✕</button>
+                    </div>
+                    <form onSubmit={handleCreate} className="modal-body space-y-4">
+                        <div className="form-group">
+                            <label className="form-label">Nombre</label>
+                            <input name="nombre" className="form-input" required />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input name="email" type="email" className="form-input" required />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Contraseña</label>
+                            <input name="password" type="password" className="form-input" required />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Rol</label>
+                            <select name="rol" className="form-select">
+                                <option value="cliente">Cliente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        <button className="btn btn-primary w-full mt-4">Crear Usuario</button>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* SUB MODALS */}
+        {modalType === 'profile' && selectedUser && (
+            <UserProfileModal user={selectedUser} onClose={() => setModalType(null)} onSave={loadData} />
+        )}
+        {modalType === 'goals' && selectedUser && (
+            <UserGoalsModal user={selectedUser} onClose={() => setModalType(null)} onSave={loadData} />
+        )}
+        {modalType === 'platos' && selectedUser && (
+            <UserPlatosModal user={selectedUser} onClose={() => setModalType(null)} onSave={loadData} />
+        )}
     </div>
   );
 }

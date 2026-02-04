@@ -18,6 +18,8 @@ default_dev_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
 ]
 for origin in default_dev_origins:
     if origin not in cors_origins:
