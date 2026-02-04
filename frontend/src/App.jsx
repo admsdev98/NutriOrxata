@@ -1,12 +1,21 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Ingredientes from './pages/Ingredientes';
 import Platos from './pages/Platos';
-import Planificador from './pages/Planificador';
+import Planificador from './pages/Planificador'; // Worker Daily View
+import GestionPlatos from './pages/GestionPlatos'; // Admin Meal Planner
 import Usuarios from './pages/Usuarios';
 import Login from './pages/Login';
+import Entrenamiento from './pages/Entrenamiento';
+import Perfil from './pages/Perfil';
+import Ayuda from './pages/Ayuda';
+import RutinasAdmin from './pages/RutinasAdmin';
+import Mensajes from './pages/Mensajes';
+import ClienteDetalle from './pages/ClienteDetalle';
 import api from './api/client';
+import DevToolbar from './components/DevToolbar';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const isAuthenticated = api.auth.isAuthenticated();
@@ -17,7 +26,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
   }
 
   if (adminOnly && !isAdmin) {
-    return <Navigate to="/planificador" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -25,137 +34,131 @@ function ProtectedRoute({ children, adminOnly = false }) {
 
 function Sidebar({ theme, onToggleTheme }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = api.auth.getUser();
   const isAdmin = api.auth.isAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     function handleResize() {
-      if (window.innerWidth >= 900) {
-        setIsMenuOpen(false);
-      }
+      if (window.innerWidth >= 900) setIsMenuOpen(false);
     }
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Close menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   function handleLogout() {
     api.auth.logout();
     navigate('/login');
   }
 
-  function handleNavClick() {
-    if (window.innerWidth < 900) {
-      setIsMenuOpen(false);
-    }
-  }
-
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          🥗 <span>NutriOrxata</span>
+    <>
+      <button
+        type="button"
+        className="menu-toggle btn-icon"
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        {isMenuOpen ? '✕' : '☰'}
+      </button>
+
+      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
+            🍊 <span>NutriOrxata</span>
+          </div>
         </div>
-        <button
-          type="button"
-          className="menu-toggle"
-          aria-label={isMenuOpen ? 'Cerrar menu' : 'Abrir menu'}
-          aria-expanded={isMenuOpen}
-          aria-controls="sidebar-menu"
-          onClick={() => setIsMenuOpen(prev => !prev)}
-        >
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-      <div id="sidebar-menu" className={`sidebar-menu ${isMenuOpen ? 'open' : ''}`}>
-        <nav className="sidebar-nav">
-          <NavLink
-            to="/"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
-          >
-            <span className="nav-icon">📊</span>
-            Dashboard
-          </NavLink>
+
+        <nav className="sidebar-nav" style={{ flex: 1 }}>
+          <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
+            Principal
+          </div>
           
+          <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <span>📊</span> Dashboard
+          </NavLink>
+
+          <NavLink to="/planificador" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <span>📅</span> {isAdmin ? 'Mi Día' : 'Mi Menú'}
+          </NavLink>
+
+          {/* Client Specific */}
+          {!isAdmin && (
+            <NavLink to="/entrenamiento" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <span>💪</span> Entrenamiento
+            </NavLink>
+          )}
+
+          {/* Admin Specific */}
           {isAdmin && (
             <>
-              <NavLink
-                to="/usuarios"
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">👥</span>
-                Usuarios
-              </NavLink>
               <div className="nav-divider" />
-              <NavLink
-                to="/ingredientes"
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">📦</span>
-                Ingredientes
+              <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
+                Administración
+              </div>
+              <NavLink to="/usuarios" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>👥</span> Clientes
               </NavLink>
-              <NavLink
-                to="/platos"
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">🍽️</span>
-                Platos
+              <NavLink to="/mensajes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>💬</span> Mensajes
               </NavLink>
-              <div className="nav-divider" />
+              <NavLink to="/rutinas" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>💪</span> Rutinas
+              </NavLink>
+              <NavLink to="/ingredientes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>📦</span> Ingredientes
+              </NavLink>
+              <NavLink to="/platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>🍽️</span> Platos
+              </NavLink>
+              <NavLink to="/gestion-platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>🍱</span> Gestión Platos
+              </NavLink>
             </>
           )}
+
+          <div className="nav-divider" />
+          <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
+            Cuenta
+          </div>
           
-          <NavLink
-            to="/planificador"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
-          >
-            <span className="nav-icon">📅</span>
-            Planificador
+          <NavLink to="/perfil" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+             <span>👤</span> Perfil
+          </NavLink>
+          
+          <NavLink to="/ayuda" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+             <span>❓</span> Ayuda
           </NavLink>
         </nav>
 
-        <div
-          style={{
-            marginTop: 'auto',
-            padding: '16px',
-            borderTop: '1px solid var(--border-color)'
-          }}
-        >
-          <div
-            style={{
-              fontSize: '0.85rem',
-              color: 'var(--text-muted)',
-              marginBottom: '8px'
-            }}
-          >
-            👤 {user?.nombre || 'Usuario'}
-            {isAdmin && <span className="badge badge-primary" style={{ marginLeft: '8px' }}>Admin</span>}
+        <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-100)', color: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              {user?.nombre?.[0] || 'U'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600 }}>{user?.nombre || 'Usuario'}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{isAdmin ? 'Admin' : 'Cliente'}</div>
+            </div>
           </div>
-          <button
-            className="btn btn-secondary btn-sm"
-            style={{ width: '100%', marginBottom: '8px' }}
-            onClick={onToggleTheme}
-            type="button"
-          >
-            {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            style={{ width: '100%' }}
-            onClick={handleLogout}
-            type="button"
-          >
-            Cerrar sesión
-          </button>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button onClick={onToggleTheme} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center' }}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+            <button onClick={handleLogout} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center', color: 'var(--accent-error)', borderColor: 'rgba(239,68,68,0.3)' }}>
+              Salir
+            </button>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -163,33 +166,23 @@ function AppLayout({ theme, onToggleTheme }) {
   return (
     <div className="app">
       <Sidebar theme={theme} onToggleTheme={onToggleTheme} />
+      <DevToolbar />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/usuarios" element={
-            <ProtectedRoute adminOnly>
-              <Usuarios />
-            </ProtectedRoute>
-          } />
-          <Route path="/ingredientes" element={
-            <ProtectedRoute adminOnly>
-              <Ingredientes />
-            </ProtectedRoute>
-          } />
-          <Route path="/platos" element={
-            <ProtectedRoute adminOnly>
-              <Platos />
-            </ProtectedRoute>
-          } />
-          <Route path="/planificador" element={
-            <ProtectedRoute>
-              <Planificador />
-            </ProtectedRoute>
-          } />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/planificador" element={<ProtectedRoute><Planificador /></ProtectedRoute>} />
+          <Route path="/gestion-platos" element={<ProtectedRoute adminOnly><GestionPlatos /></ProtectedRoute>} />
+          
+          <Route path="/entrenamiento" element={<ProtectedRoute><Entrenamiento /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+          <Route path="/ayuda" element={<ProtectedRoute><Ayuda /></ProtectedRoute>} />
+
+          <Route path="/usuarios" element={<ProtectedRoute adminOnly><Usuarios /></ProtectedRoute>} />
+          <Route path="/clientes/:id" element={<ProtectedRoute adminOnly><ClienteDetalle /></ProtectedRoute>} /> {/* New Route */}
+          <Route path="/mensajes" element={<ProtectedRoute adminOnly><Mensajes /></ProtectedRoute>} />
+          <Route path="/rutinas" element={<ProtectedRoute adminOnly><RutinasAdmin /></ProtectedRoute>} />
+          <Route path="/ingredientes" element={<ProtectedRoute adminOnly><Ingredientes /></ProtectedRoute>} />
+          <Route path="/platos" element={<ProtectedRoute adminOnly><Platos /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>
@@ -197,14 +190,7 @@ function AppLayout({ theme, onToggleTheme }) {
 }
 
 function App() {
-  const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem('theme');
-    if (stored) return stored;
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
-  });
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -218,6 +204,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/*" element={<AppLayout theme={theme} onToggleTheme={toggleTheme} />} />
       </Routes>

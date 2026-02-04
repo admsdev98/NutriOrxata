@@ -3,25 +3,19 @@ import api from '../api/client';
 
 const MOMENTOS = ['desayuno', 'almuerzo', 'comida', 'merienda', 'cena'];
 const MOMENTOS_DISPLAY = {
-  desayuno: { icon: '🌅', label: 'Desayuno' },
-  almuerzo: { icon: '🥪', label: 'Almuerzo' },
-  comida: { icon: '☀️', label: 'Comida' },
-  merienda: { icon: '🍎', label: 'Merienda' },
-  cena: { icon: '🌙', label: 'Cena' },
+  desayuno: { icon: '🌅', label: 'Desayuno', color: 'bg-orange-100 text-orange-700' },
+  almuerzo: { icon: '🥪', label: 'Almuerzo', color: 'bg-blue-100 text-blue-700' },
+  comida: { icon: '☀️', label: 'Comida', color: 'bg-yellow-100 text-yellow-700' },
+  merienda: { icon: '🍎', label: 'Merienda', color: 'bg-orange-100 text-orange-700' },
+  cena: { icon: '🌙', label: 'Cena', color: 'bg-indigo-100 text-indigo-700' },
 };
 
 function normalizeText(value) {
-  return (value || '')
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  return (value || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function getSearchTokens(value) {
-  return normalizeText(value)
-    .trim()
-    .split(/\s+/)
+  return normalizeText(value).trim().split(/\s+/)
     .filter(Boolean);
 }
 
@@ -44,22 +38,11 @@ function calcularNutricion(ingredientes) {
   }, { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, peso: 0 });
 }
 
-function getPlatoMomentos(plato) {
-  if (!plato) return [];
-  if (Array.isArray(plato.momentos_dia) && plato.momentos_dia.length > 0) {
-    return plato.momentos_dia;
-  }
-  if (plato.momento_dia) return [plato.momento_dia];
-  return [];
-}
-
 function PlatoModal({ plato, onClose, onSave }) {
   const [form, setForm] = useState({
     nombre: plato?.nombre || '',
     descripcion: plato?.descripcion || '',
-    momentos_dia: plato?.momentos_dia?.length
-      ? plato.momentos_dia
-      : (plato?.momento_dia ? [plato.momento_dia] : ['comida']),
+    momentos_dia: plato?.momentos_dia?.length ? plato.momentos_dia : (plato?.momento_dia ? [plato.momento_dia] : ['comida']),
   });
   const [ingredientesPlato, setIngredientesPlato] = useState([]);
   const [ingredientesDisponibles, setIngredientesDisponibles] = useState([]);
@@ -67,349 +50,191 @@ function PlatoModal({ plato, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadData();
+    // Load ingredients and detailed plato data
+    api.ingredientes.list().then(setIngredientesDisponibles).catch(console.error);
+    if (plato?.id) {
+       api.platos.get(plato.id).then(detail => {
+           setIngredientesPlato(detail.ingredientes.map(pi => ({
+               id: pi.ingrediente_id,
+               nombre: pi.ingrediente_nombre,
+               cantidad_gramos: pi.cantidad_gramos,
+               calorias_por_100g: (pi.calorias_aportadas / pi.cantidad_gramos) * 100,
+               proteinas_por_100g: (pi.proteinas_aportadas / pi.cantidad_gramos) * 100,
+               carbohidratos_por_100g: (pi.carbohidratos_aportados / pi.cantidad_gramos) * 100,
+               grasas_por_100g: (pi.grasas_aportadas / pi.cantidad_gramos) * 100,
+           })));
+       }).catch(console.error);
+    }
   }, []);
 
-  async function loadData() {
-    try {
-      const [ings] = await Promise.all([
-        api.ingredientes.list(),
-      ]);
-      setIngredientesDisponibles(ings);
-
-      if (plato?.id) {
-        const platoDetail = await api.platos.get(plato.id);
-        setIngredientesPlato(platoDetail.ingredientes.map(pi => ({
-          id: pi.ingrediente_id,
-          nombre: pi.ingrediente_nombre,
-          cantidad_gramos: pi.cantidad_gramos,
-          calorias_por_100g: (pi.calorias_aportadas / pi.cantidad_gramos) * 100,
-          proteinas_por_100g: (pi.proteinas_aportadas / pi.cantidad_gramos) * 100,
-          carbohidratos_por_100g: (pi.carbohidratos_aportados / pi.cantidad_gramos) * 100,
-          grasas_por_100g: (pi.grasas_aportadas / pi.cantidad_gramos) * 100,
-        })));
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  }
-
-  function addIngrediente(ing) {
+  const addIngrediente = (ing) => {
     if (ingredientesPlato.find(i => i.id === ing.id)) return;
-    setIngredientesPlato([...ingredientesPlato, {
-      id: ing.id,
-      nombre: ing.nombre,
-      cantidad_gramos: 100,
-      calorias_por_100g: ing.calorias_por_100g,
-      proteinas_por_100g: ing.proteinas_por_100g,
-      carbohidratos_por_100g: ing.carbohidratos_por_100g,
-      grasas_por_100g: ing.grasas_por_100g,
-    }]);
+    setIngredientesPlato([...ingredientesPlato, { ...ing, cantidad_gramos: 100 }]);
     setSearchIng('');
-  }
+  };
 
-  function updateCantidad(idx, cantidad) {
-    const updated = [...ingredientesPlato];
-    updated[idx].cantidad_gramos = parseFloat(cantidad) || 0;
-    setIngredientesPlato(updated);
-  }
+  const updateCantidad = (idx, val) => {
+      const copy = [...ingredientesPlato];
+      copy[idx].cantidad_gramos = parseFloat(val) || 0;
+      setIngredientesPlato(copy);
+  };
 
-  function removeIngrediente(idx) {
-    setIngredientesPlato(ingredientesPlato.filter((_, i) => i !== idx));
-  }
+  const removeIngrediente = (idx) => {
+      setIngredientesPlato(ingredientesPlato.filter((_, i) => i !== idx));
+  };
 
-  function toggleMomento(momento) {
-    setForm(prev => {
-      const exists = prev.momentos_dia.includes(momento);
-      const next = exists
-        ? prev.momentos_dia.filter(m => m !== momento)
-        : [...prev.momentos_dia, momento];
-      return { ...prev, momentos_dia: next };
-    });
-  }
+  const toggleMomento = (momento) => {
+      setForm(prev => ({
+          ...prev,
+          momentos_dia: prev.momentos_dia.includes(momento) 
+             ? prev.momentos_dia.filter(m => m !== momento)
+             : [...prev.momentos_dia, momento]
+      }));
+  };
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.momentos_dia.length) {
-      alert('Selecciona al menos un momento del dia');
-      return;
-    }
-    if (ingredientesPlato.length === 0) {
-      alert('Añade al menos un ingrediente');
-      return;
-    }
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+      if(!form.momentos_dia.length) return alert('Elige al menos un momento del día');
+      if(!ingredientesPlato.length) return alert('Añade ingredientes');
+      
+      setSaving(true);
+      try {
+          const payload = {
+              ...form,
+              ingredientes: ingredientesPlato.map(i => ({ ingrediente_id: i.id, cantidad_gramos: i.cantidad_gramos }))
+          };
+          plato?.id ? await api.platos.update(plato.id, payload) : await api.platos.create(payload);
+          onSave();
+      } catch(err) { alert(err.message); } finally { setSaving(false); }
+  };
 
-    setSaving(true);
-    try {
-      const data = {
-        ...form,
-        ingredientes: ingredientesPlato.map(i => ({
-          ingrediente_id: i.id,
-          cantidad_gramos: i.cantidad_gramos,
-        })),
-      };
-
-      if (plato?.id) {
-        await api.platos.update(plato.id, form);
-      } else {
-        await api.platos.create(data);
-      }
-      onSave();
-    } catch (error) {
-      alert('Error: ' + error.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const nutricion = calcularNutricion(ingredientesPlato);
-  const ingredientTokens = getSearchTokens(searchIng);
-  const filteredIngs = ingredientesDisponibles.filter(i => {
-    if (!ingredientTokens.length) return false;
-    if (ingredientesPlato.find(ip => ip.id === i.id)) return false;
-    return matchesTokens(i.nombre, ingredientTokens);
-  }).slice(0, 8);
+  const nutri = calcularNutricion(ingredientesPlato);
+  const filteredIngs = ingredientesDisponibles.filter(i => 
+     !ingredientesPlato.find(ip => ip.id === i.id) && 
+     i.nombre.toLowerCase().includes(searchIng.toLowerCase())
+  ).slice(0, 10);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2 className="modal-title">
-            {plato?.id ? '✏️ Editar Plato' : '🍽️ Crear Nuevo Plato'}
-          </h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+      <div className="modal modal-lg flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="modal-header shrink-0">
+            <h2 className="modal-title text-xl font-bold text-primary-600">{plato?.id ? '✏️ Editar Plato' : '🍽️ Nuevo Plato'}</h2>
+            <button className="btn-icon" onClick={onClose}>✕</button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label className="form-label">Nombre del plato</label>
-              <input
-                type="text"
-                className="form-input"
-                value={form.nombre}
-                onChange={e => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Ej: Macarrones a la Boloñesa"
-                required
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Descripción (opcional)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={form.descripcion}
-                  onChange={e => setForm({ ...form, descripcion: e.target.value })}
-                  placeholder="Breve descripción..."
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Momentos del dia</label>
-                <div className="checkbox-group">
-                  {MOMENTOS.map(m => (
-                    <label key={m} className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={form.momentos_dia.includes(m)}
-                        onChange={() => toggleMomento(m)}
-                      />
-                      {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
-                    </label>
-                  ))}
-                </div>
-                <p className="text-muted text-sm" style={{ marginTop: '6px' }}>
-                  Puedes marcar mas de un momento si el plato encaja en varios.
-                </p>
-              </div>
-            </div>
-
-            <hr style={{ borderColor: 'var(--border-color)', margin: '24px 0' }} />
-
-            <h4 style={{ marginBottom: '16px' }}>📦 Ingredientes</h4>
-
-            <div className="form-group">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="🔍 Buscar ingrediente para añadir..."
-                value={searchIng}
-                onChange={e => setSearchIng(e.target.value)}
-              />
-              {searchIng && filteredIngs.length > 0 && (
-                <div style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--border-radius)',
-                  marginTop: '8px',
-                  maxHeight: '200px',
-                  overflow: 'auto',
-                }}>
-                  {filteredIngs.map(ing => (
-                    <div
-                      key={ing.id}
-                      style={{
-                        padding: '12px 16px',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--border-color)',
-                      }}
-                      onClick={() => addIngrediente(ing)}
-                    >
-                      <strong>{ing.nombre}</strong>
-                      <span style={{ color: 'var(--text-muted)', marginLeft: '8px', fontSize: '0.9rem' }}>
-                        {Math.round(ing.calorias_por_100g)} kcal/100g
-                      </span>
+        
+        <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
+            <div className="modal-body overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="form-group">
+                        <label className="form-label">Nombre</label>
+                        <input className="form-input" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required placeholder="Ej: Paella Valenciana" />
                     </div>
-                  ))}
+                    <div className="form-group">
+                        <label className="form-label">Descripción</label>
+                        <input className="form-input" value={form.descripcion} onChange={e => setForm({...form, descripcion: e.target.value})} placeholder="Opcional..." />
+                    </div>
                 </div>
-              )}
-            </div>
 
-            {ingredientesPlato.length === 0 ? (
-              <div className="empty-state" style={{ padding: '40px' }}>
-                <p className="text-muted">Busca y añade ingredientes al plato</p>
-              </div>
-            ) : (
-              <div>
-                {ingredientesPlato.map((ing, idx) => {
-                  const factor = ing.cantidad_gramos / 100;
-                  const kcal = (ing.calorias_por_100g * factor).toFixed(0);
-                  const prot = (ing.proteinas_por_100g * factor).toFixed(1);
-                  const carb = (ing.carbohidratos_por_100g * factor).toFixed(1);
-                  const grasas = (ing.grasas_por_100g * factor).toFixed(1);
+                <div className="form-group mb-6">
+                    <label className="form-label mb-2 block">Momentos del día</label>
+                    <div className="flex flex-wrap gap-2">
+                        {MOMENTOS.map(m => (
+                            <button 
+                                key={m}
+                                type="button"
+                                onClick={() => toggleMomento(m)}
+                                className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${form.momentos_dia.includes(m) ? 'bg-primary text-white border-primary' : 'bg-white text-secondary border-border hover:border-primary'}`}
+                            >
+                                {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                  return (
-                    <div key={ing.id} className="ingredient-item">
-                      <div className="ingredient-info">
-                        <div className="ingredient-name">{idx + 1}. {ing.nombre}</div>
-                        <div className="ingredient-nutrition">
-                          Por 100g: {Math.round(ing.calorias_por_100g)} kcal
-                        </div>
-                      </div>
-                      <div className="ingredient-quantity">
-                        <input
-                          type="number"
-                          className="form-input quantity-input"
-                          value={ing.cantidad_gramos}
-                          onChange={e => updateCantidad(idx, e.target.value)}
-                          min="1"
+                <div className="bg-input p-4 rounded-lg border border-border">
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-bold text-secondary uppercase text-sm">Ingredientes</h4>
+                        <div className="text-secondary text-xs">{ingredientesPlato.length} añadidos</div>
+                    </div>
+                    
+                    <div className="relative mb-4">
+                        <input 
+                            className="form-input pl-8" 
+                            placeholder="Buscar ingrediente para añadir..." 
+                            value={searchIng}
+                            onChange={e => setSearchIng(e.target.value)}
                         />
-                        <span>g</span>
-                      </div>
-                      <div className="ingredient-contribution">
-                        ➜ {kcal} kcal | {prot}g prot | {carb}g carb | {grasas}g grasas
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => removeIngrediente(idx)}
-                      >
-                        ✕
-                      </button>
+                         <span className="absolute left-3 top-3 text-secondary">🔍</span>
+                        
+                        {searchIng && (
+                            <div className="absolute top-full left-0 right-0 bg-white border border-border shadow-lg rounded-lg mt-1 z-10 max-h-48 overflow-y-auto">
+                                {filteredIngs.map(ing => (
+                                    <button 
+                                        key={ing.id} 
+                                        type="button"
+                                        onClick={() => addIngrediente(ing)}
+                                        className="w-full text-left p-2 hover:bg-input text-sm border-b border-border last:border-0 flex justify-between"
+                                    >
+                                        <span>{ing.nombre}</span>
+                                        <span className="text-secondary text-xs">{Math.round(ing.calorias_por_100g)} kcal</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
 
-            {ingredientesPlato.length > 0 && (
-              <div className="nutrition-stats" style={{ marginTop: '24px' }}>
-                <div className="stat-item">
-                  <div className="stat-icon">🔥</div>
-                  <div className="stat-value">{nutricion.calorias.toFixed(0)}</div>
-                  <div className="stat-label">kcal totales</div>
+                    <div className="space-y-2">
+                        {ingredientesPlato.map((ing, idx) => (
+                            <div key={ing.id} className="bg-white p-2 rounded shadow-sm border border-border flex items-center justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">{ing.nombre}</div>
+                                    <div className="text-xs text-secondary">
+                                        {(ing.calorias_por_100g * ing.cantidad_gramos/100).toFixed(0)} kcal
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="number" 
+                                        className="form-input text-center py-1 px-1 h-8 w-16 text-sm"
+                                        value={ing.cantidad_gramos}
+                                        onChange={e => updateCantidad(idx, e.target.value)}
+                                    />
+                                    <span className="text-xs text-secondary">g</span>
+                                    <button type="button" onClick={() => removeIngrediente(idx)} className="text-error hover:bg-error-50 rounded p-1">✕</button>
+                                </div>
+                            </div>
+                        ))}
+                        {!ingredientesPlato.length && <div className="text-center text-sm text-secondary italic py-2">No hay ingredientes.</div>}
+                    </div>
+
+                    {/* Stats Summary */}
+                    <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-border">
+                        <div className="text-center">
+                            <div className="text-xl font-bold text-primary">{nutri.calorias.toFixed(0)}</div>
+                            <div className="text-[10px] uppercase text-secondary font-bold">Kcal</div>
+                        </div>
+                        <div className="text-center border-l border-border">
+                            <div className="text-lg font-bold">{nutri.proteinas.toFixed(1)}</div>
+                            <div className="text-[10px] uppercase text-secondary">Prot</div>
+                        </div>
+                        <div className="text-center border-l border-border">
+                            <div className="text-lg font-bold">{nutri.carbohidratos.toFixed(1)}</div>
+                            <div className="text-[10px] uppercase text-secondary">Carb</div>
+                        </div>
+                        <div className="text-center border-l border-border">
+                            <div className="text-lg font-bold">{nutri.grasas.toFixed(1)}</div>
+                            <div className="text-[10px] uppercase text-secondary">Grasas</div>
+                        </div>
+                    </div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-icon">🥩</div>
-                  <div className="stat-value">{nutricion.proteinas.toFixed(1)}g</div>
-                  <div className="stat-label">proteínas</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-icon">🍞</div>
-                  <div className="stat-value">{nutricion.carbohidratos.toFixed(1)}g</div>
-                  <div className="stat-label">carbohidratos</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-icon">🥑</div>
-                  <div className="stat-value">{nutricion.grasas.toFixed(1)}g</div>
-                  <div className="stat-label">grasas</div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="modal-footer">
-            <span style={{ flex: 1, color: 'var(--text-muted)' }}>
-              ⚖️ Peso total: {nutricion.peso.toFixed(0)}g
-            </span>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Guardando...' : 'Guardar plato'}
-            </button>
-          </div>
+            </div>
+
+            <div className="modal-footer shrink-0">
+                 <div className="mr-auto text-sm text-secondary">Peso total: <b>{nutri.peso}g</b></div>
+                 <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+                 <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar Plato'}</button>
+            </div>
         </form>
-      </div>
-    </div>
-  );
-}
-
-function PlatoCard({ plato, onEdit, onDelete }) {
-  const momentos = getPlatoMomentos(plato);
-  
-  return (
-    <div className="card plato-card">
-      <div className="plato-card-header">
-        <div className="plato-card-main">
-          <h3 className="plato-card-title">{plato.nombre}</h3>
-          <div className="plato-card-meta">
-            {momentos.map(momento => {
-              const momentoInfo = MOMENTOS_DISPLAY[momento] || { icon: '🍽️', label: momento };
-              return (
-                <span key={momento} className="badge badge-primary">
-                  {momentoInfo.icon} {momentoInfo.label}
-                </span>
-              );
-            })}
-            {plato.descripcion && (
-              <span className="plato-card-desc">{plato.descripcion}</span>
-            )}
-          </div>
-        </div>
-        <div className="plato-card-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => onEdit(plato)}>
-            Editar
-          </button>
-          <button className="btn btn-danger btn-sm" onClick={() => onDelete(plato.id)}>
-            ✕
-          </button>
-        </div>
-      </div>
-      <div className="nutrition-stats plato-nutrition">
-        <div className="stat-item">
-          <div className="stat-value">
-            {Math.round(plato.calorias_totales)}
-          </div>
-          <div className="stat-label">kcal</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-value">
-            {Math.round(plato.proteinas_totales)}g
-          </div>
-          <div className="stat-label">prot</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-value">
-            {Math.round(plato.carbohidratos_totales)}g
-          </div>
-          <div className="stat-label">carb</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-value">
-            {Math.round(plato.grasas_totales)}g
-          </div>
-          <div className="stat-label">grasas</div>
-        </div>
       </div>
     </div>
   );
@@ -420,243 +245,131 @@ function Platos() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeMomento, setActiveMomento] = useState('todos');
+  const [search, setSearch] = useState('');
+  const [filterMomento, setFilterMomento] = useState('todos');
 
-  useEffect(() => {
-    loadPlatos();
-  }, []);
+  useEffect(() => { loadPlatos(); }, []);
 
-  async function loadPlatos() {
+  const loadPlatos = async () => {
     try {
-      const data = await api.platos.list();
-      setPlatos(data);
-    } catch (error) {
-      console.error('Error loading platos:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+        const data = await api.platos.list();
+        setPlatos(data);
+    } catch(e) { console.error(e); } finally { setLoading(false); }
+  };
 
-  function handleNew() {
-    setEditingItem(null);
-    setModalOpen(true);
-  }
+  const handleDelete = async (id) => {
+      if(!confirm('¿Eliminar plato?')) return;
+      try { await api.platos.delete(id); loadPlatos(); } catch(e) { alert(e.message); }
+  };
 
-  function handleEdit(item) {
-    setEditingItem(item);
-    setModalOpen(true);
-  }
+  const getMomentos = (p) => {
+     if(p.momentos_dia?.length) return p.momentos_dia;
+     if(p.momento_dia) return [p.momento_dia];
+     return [];
+  };
 
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar este plato?')) return;
-    try {
-      await api.platos.delete(id);
-      loadPlatos();
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  }
-
-  function handleModalClose() {
-    setModalOpen(false);
-    setEditingItem(null);
-  }
-
-  function handleSave() {
-    handleModalClose();
-    loadPlatos();
-  }
-
-  const platosAgrupados = MOMENTOS.reduce((acc, momento) => {
-    acc[momento] = platos.filter(p => getPlatoMomentos(p).includes(momento));
-    return acc;
-  }, {});
-
-  const searchTokens = getSearchTokens(searchQuery);
-  const filteredPlatos = platos.filter(p => {
-    const matchesMomento = activeMomento === 'todos' || getPlatoMomentos(p).includes(activeMomento);
-    if (!matchesMomento) return false;
-    if (!searchTokens.length) return true;
-    const combined = `${p.nombre || ''} ${p.descripcion || ''}`;
-    return matchesTokens(combined, searchTokens);
+  const filtered = platos.filter(p => {
+      if(filterMomento !== 'todos' && !getMomentos(p).includes(filterMomento)) return false;
+      if(search && !normalizeText(p.nombre).includes(normalizeText(search))) return false;
+      return true;
   });
 
-  const momentCounts = MOMENTOS.reduce((acc, momento) => {
-    acc[momento] = platosAgrupados[momento].length;
-    return acc;
-  }, {});
-
-  const activeMomentoInfo = MOMENTOS_DISPLAY[activeMomento];
-  const showGrouped = activeMomento === 'todos' && searchTokens.length === 0;
-  const momentosConPlatos = MOMENTOS.filter(m => platosAgrupados[m].length > 0).length;
-  const averageKcal = platos.length > 0
-    ? Math.round(platos.reduce((sum, p) => sum + (p.calorias_totales || 0), 0) / platos.length)
-    : 0;
-
   return (
-    <div className="platos-page">
-      <header className="platos-hero">
-        <div className="platos-hero-main">
-          <p className="platos-eyebrow">Gestor de platos</p>
-          <h1 className="page-title">🍽️ Platos</h1>
-          <p className="page-subtitle">
-            Crea, organiza y reutiliza platos con ingredientes y nutricion automatica.
-          </p>
-        </div>
-        <div className="platos-hero-actions">
-          <button className="btn btn-primary" onClick={handleNew}>
-            + Crear plato
-          </button>
-        </div>
-        <div className="platos-hero-stats">
-          <div className="platos-stat">
-            <span className="platos-stat-value">{platos.length}</span>
-            <span className="platos-stat-label">platos totales</span>
-          </div>
-          <div className="platos-stat">
-            <span className="platos-stat-value">{momentosConPlatos}</span>
-            <span className="platos-stat-label">momentos con platos</span>
-          </div>
-          <div className="platos-stat">
-            <span className="platos-stat-value">{averageKcal}</span>
-            <span className="platos-stat-label">kcal promedio</span>
-          </div>
-        </div>
-      </header>
-
-      <section className="platos-toolbar card">
-        <div className="platos-search">
-          <span className="platos-search-icon">🔍</span>
-          <input
-            type="text"
-            className="form-input platos-search-input"
-            placeholder="Buscar por nombre o descripcion..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="platos-filters">
-          <button
-            className={`platos-filter-btn ${activeMomento === 'todos' ? 'active' : ''}`}
-            onClick={() => setActiveMomento('todos')}
-          >
-            Todos
-            <span className="platos-filter-count">{platos.length}</span>
-          </button>
-          {MOMENTOS.map(m => (
-            <button
-              key={m}
-              className={`platos-filter-btn ${activeMomento === m ? 'active' : ''}`}
-              onClick={() => setActiveMomento(m)}
-            >
-              {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
-              <span className="platos-filter-count">{momentCounts[m]}</span>
+    <div className="animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h1 className="page-title">Platos</h1>
+                <p className="page-subtitle">Recetario y composiciones</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => { setEditingItem(null); setModalOpen(true); }}>
+                + Crear Plato
             </button>
-          ))}
         </div>
-        {(activeMomento !== 'todos' || searchTokens.length > 0) && (
-          <div className="platos-toolbar-actions">
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => { setActiveMomento('todos'); setSearchQuery(''); }}
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        )}
-      </section>
 
-      {loading ? (
-        <div className="loading"><div className="spinner"></div></div>
-      ) : platos.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">🍽️</div>
-          <h3 className="empty-state-title">No hay platos</h3>
-          <p>Crea tu primer plato para empezar</p>
-          <button className="btn btn-primary" onClick={handleNew} style={{ marginTop: '16px' }}>
-            + Crear plato
-          </button>
-        </div>
-      ) : (
-        <div className="platos-sections">
-          {showGrouped ? (
-            MOMENTOS.map(momento => {
-              const platosDelMomento = platosAgrupados[momento];
-              if (platosDelMomento.length === 0) return null;
-
-              const momentoInfo = MOMENTOS_DISPLAY[momento];
-
-              return (
-                <section key={momento} className="platos-section">
-                  <div className="platos-section-header">
-                    <div>
-                      <h2 className="platos-section-title">
-                        <span className="platos-section-icon">{momentoInfo.icon}</span>
-                        {momentoInfo.label}
-                      </h2>
-                      <p className="platos-section-sub">
-                        {platosDelMomento.length} {platosDelMomento.length === 1 ? 'plato' : 'platos'} disponibles
-                      </p>
-                    </div>
-                    <span className="platos-section-pill">
-                      {momentoInfo.icon} {momentoInfo.label}
-                    </span>
-                  </div>
-                  <div className="platos-grid">
-                    {platosDelMomento.map(plato => (
-                      <PlatoCard
-                        key={plato.id}
-                        plato={plato}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </div>
-                </section>
-              );
-            })
-          ) : (
-            <section className="platos-section">
-              <div className="platos-section-header">
-                <div>
-                  <h2 className="platos-section-title">Resultados</h2>
-                  <p className="platos-section-sub">
-                    {filteredPlatos.length} {filteredPlatos.length === 1 ? 'plato' : 'platos'} encontrados
-                  </p>
-                </div>
-                {activeMomentoInfo && (
-                  <span className="platos-section-pill">
-                    {activeMomentoInfo.icon} {activeMomentoInfo.label}
-                  </span>
-                )}
-              </div>
-              {filteredPlatos.length === 0 ? (
-                <div className="empty-state compact">
-                  <p className="text-muted">No hay resultados con esos filtros.</p>
-                </div>
-              ) : (
-                <div className="platos-grid">
-                  {filteredPlatos.map(plato => (
-                    <PlatoCard
-                      key={plato.id}
-                      plato={plato}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
+        <div className="card p-4 mb-6">
+            <div className="flex gap-4 flex-col md:flex-row">
+                 <div className="relative flex-1">
+                    <input 
+                        className="form-input pl-10" 
+                        placeholder="Buscar plato..." 
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
                     />
-                  ))}
+                    <span className="absolute left-3 top-3 text-secondary">🔍</span>
                 </div>
-              )}
-            </section>
-          )}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    <button 
+                         className={`px-3 py-2 rounded-full text-sm font-medium border whitespace-nowrap ${filterMomento === 'todos' ? 'bg-primary text-white border-primary' : 'bg-white text-secondary hover:border-primary'}`}
+                         onClick={() => setFilterMomento('todos')}
+                    >
+                        Todos
+                    </button>
+                    {MOMENTOS.map(m => (
+                        <button
+                             key={m}
+                             className={`px-3 py-2 rounded-full text-sm font-medium border whitespace-nowrap ${filterMomento === m ? 'bg-primary text-white border-primary' : 'bg-white text-secondary hover:border-primary'}`}
+                             onClick={() => setFilterMomento(m)}
+                        >
+                            {MOMENTOS_DISPLAY[m].icon} {MOMENTOS_DISPLAY[m].label}
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
-      )}
+
+        {loading ? <div className="spinner mx-auto" /> : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filtered.map(plato => (
+                    <div key={plato.id} className="card p-0 overflow-hidden hover:shadow-lg transition-all group">
+                         <div className="p-4 border-b border-border bg-gradient-to-br from-white to-gray-50 flex justify-between items-start">
+                             <div>
+                                 <h3 className="font-bold text-lg text-main mb-1">{plato.nombre}</h3>
+                                 <div className="flex gap-1 flex-wrap">
+                                     {getMomentos(plato).map(m => (
+                                         <span key={m} className={`text-[10px] uppercase px-2 py-0.5 rounded-full font-bold tracking-wide border border-border bg-white text-secondary`}>
+                                            {MOMENTOS_DISPLAY[m].label}
+                                         </span>
+                                     ))}
+                                 </div>
+                             </div>
+                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white p-1 rounded border shadow-sm">
+                                 <button onClick={() => { setEditingItem(plato); setModalOpen(true); }} className="hover:bg-input p-1 rounded text-lg" title="Editar">✏️</button>
+                                 <button onClick={() => handleDelete(plato.id)} className="hover:bg-error-50 text-error p-1 rounded text-lg" title="Borrar">🗑️</button>
+                             </div>
+                         </div>
+                         
+                         <div className="p-4">
+                             {plato.descripcion && <p className="text-secondary text-sm mb-4 line-clamp-2">{plato.descripcion}</p>}
+                             
+                             <div className="grid grid-cols-4 gap-2 text-center bg-input rounded-lg p-2">
+                                 <div>
+                                     <div className="font-bold text-primary">{Math.round(plato.calorias_totales)}</div>
+                                     <div className="text-[10px] uppercase text-secondary">kcal</div>
+                                 </div>
+                                 <div className="border-l border-border">
+                                     <div className="font-bold">{Math.round(plato.proteinas_totales)}</div>
+                                     <div className="text-[10px] uppercase text-secondary">Prot</div>
+                                 </div>
+                                 <div className="border-l border-border">
+                                     <div className="font-bold">{Math.round(plato.carbohidratos_totales)}</div>
+                                     <div className="text-[10px] uppercase text-secondary">Carb</div>
+                                 </div>
+                                 <div className="border-l border-border">
+                                     <div className="font-bold">{Math.round(plato.grasas_totales)}</div>
+                                     <div className="text-[10px] uppercase text-secondary">Fat</div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                ))}
+            </div>
+        )}
 
       {modalOpen && (
         <PlatoModal
           plato={editingItem}
-          onClose={handleModalClose}
-          onSave={handleSave}
+          onClose={() => setModalOpen(false)}
+          onSave={() => { setModalOpen(false); loadPlatos(); }}
         />
       )}
     </div>
