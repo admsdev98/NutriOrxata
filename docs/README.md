@@ -30,5 +30,11 @@ Execution and operations:
 - `docs/DB_SECURITY_AND_INDEXING.md`: tenant isolation, indexing strategy, rate limits.
 - `docs/EMAIL_DELIVERY.md`: SendGrid setup and transactional templates.
 - `docs/DEPLOYMENT_OVH_VPS.md`: production deployment baseline (Compose/TLS/backups).
+- `docs/OPS_RUNBOOK.md`: operational procedures (deploy/backup/restore/security).
+- `docs/API_CONVENTIONS.md`: API patterns (errors, pagination, auth, uploads).
+- `docs/PERMISSIONS_MATRIX.md`: worker/client permissions + special states.
+- `docs/PRODUCT_COPY.md`: sensitive UI copy (blocked access, read-only, deletion).
+- `docs/DECISION_LOG.md`: locked decisions.
+- `docs/OPEN_QUESTIONS.md`: unresolved decisions.
 
 Note: the current MVP lives under `v1-beta/` and acts as a UI/UX baseline reference.
