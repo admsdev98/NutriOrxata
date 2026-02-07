@@ -33,3 +33,31 @@ class PlanificacionSemanal(Base):
     plato = relationship("Plato")
     cliente_plato = relationship("ClientePlato")
     client = relationship("Usuario")
+
+    items = relationship(
+        "PlanificacionItem",
+        back_populates="planificacion",
+        cascade="all, delete-orphan",
+        order_by="PlanificacionItem.orden.asc(), PlanificacionItem.id.asc()",
+    )
+
+
+class PlanificacionItem(Base):
+    __tablename__ = "planificacion_items"
+
+    id = Column(Integer, primary_key=True)
+    planificacion_id = Column(
+        Integer,
+        ForeignKey("planificacion_semanal.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    cliente_plato_id = Column(
+        Integer,
+        ForeignKey("cliente_platos.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    orden = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+
+    planificacion = relationship("PlanificacionSemanal", back_populates="items")
+    cliente_plato = relationship("ClientePlato")

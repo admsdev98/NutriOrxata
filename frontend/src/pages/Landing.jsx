@@ -5,6 +5,11 @@ import api from '../api/client';
 export default function Landing() {
   const navigate = useNavigate();
 
+  function scrollToPlans() {
+    const el = document.getElementById('planes');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   useEffect(() => {
     if (api.auth.isAuthenticated()) {
       navigate('/dashboard', { replace: true });
@@ -13,13 +18,15 @@ export default function Landing() {
 
   return (
     <div className="landing-page">
-      <nav style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
-        <div className="sidebar-logo">
-          <span>NutriOrxata</span>
-        </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <button onClick={() => navigate('/login')} className="btn btn-ghost">Iniciar Sesión</button>
-          <button onClick={() => navigate('/login')} className="btn btn-primary">Registrarse</button>
+      <nav className="landing-nav">
+        <div className="landing-container landing-nav-inner">
+          <div className="sidebar-logo">
+            <span>NutriOrxata</span>
+          </div>
+          <div className="landing-nav-actions">
+            <button onClick={() => navigate('/login?mode=login')} className="btn btn-ghost">Iniciar Sesión</button>
+            <button onClick={() => navigate('/login?mode=register')} className="btn btn-primary">Registrarse</button>
+          </div>
         </div>
       </nav>
 
@@ -31,18 +38,18 @@ export default function Landing() {
         <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', marginBottom: '32px' }}>
           Planifica tus comidas, gestiona tus entrenamientos y alcanza tus objetivos con la plataforma todo en uno para profesionales y clientes.
         </p>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <button onClick={() => navigate('/login')} className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
+        <div className="landing-cta">
+          <button onClick={() => navigate('/login?mode=register')} className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
             Empezar Gratis
           </button>
-          <button className="btn btn-secondary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
+          <button onClick={scrollToPlans} className="btn btn-secondary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
             Ver Planes
           </button>
         </div>
       </div>
 
-      <div style={{ background: 'white', padding: '80px 24px' }}>
-        <div className="main-content" style={{ padding: 0 }}>
+      <div id="planes" className="landing-section landing-plans">
+        <div className="landing-container">
           <h2 className="text-center page-title" style={{ marginBottom: '60px' }}>Planes Simples</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -55,10 +62,10 @@ export default function Landing() {
                 <li>Registro de peso</li>
                 <li>1 rutina estándar</li>
               </ul>
-              <button className="btn btn-secondary btn-full">Seleccionar</button>
+              <button onClick={() => navigate('/login?mode=register')} className="btn btn-secondary btn-full">Seleccionar</button>
             </div>
 
-            <div className="card text-center" style={{ borderTop: '4px solid var(--primary-500)', transform: 'scale(1.05)' }}>
+            <div className="card text-center landing-plan-featured" style={{ borderTop: '4px solid var(--primary-500)' }}>
               <div className="badge badge-primary" style={{ marginBottom: '16px' }}>Más Popular</div>
               <h3 className="card-title">Pro</h3>
               <div style={{ fontSize: '2.5rem', fontWeight: '800', margin: '16px 0', color: 'var(--primary-600)' }}>29€</div>
@@ -69,7 +76,7 @@ export default function Landing() {
                 <li>Rutinas ilimitadas</li>
                 <li>Chat con nutricionista</li>
               </ul>
-              <button className="btn btn-primary btn-full">Empezar Ahora</button>
+              <button onClick={() => navigate('/login?mode=register')} className="btn btn-primary btn-full">Empezar Ahora</button>
             </div>
 
             <div className="card text-center" style={{ borderTop: '4px solid var(--border-color)' }}>
@@ -81,7 +88,7 @@ export default function Landing() {
                 <li>Panel de administración</li>
                 <li>Marca blanca</li>
               </ul>
-              <button className="btn btn-secondary btn-full">Contactar</button>
+              <button onClick={() => { window.location.href = 'mailto:hola@nutriorxata.com?subject=Plan%20Empresa'; }} className="btn btn-secondary btn-full">Contactar</button>
             </div>
           </div>
         </div>

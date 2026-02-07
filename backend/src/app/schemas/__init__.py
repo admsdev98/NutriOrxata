@@ -27,6 +27,8 @@ from app.schemas.planificacion import (
     PlanificacionResponse,
     ResumenDiario,
     ResumenSemanal,
+    PlanificacionBulkRequest,
+    PlanificacionBulkResponse,
 )
 from app.schemas.cliente_plato import (
     ClientePlatoCreate,
@@ -59,6 +61,8 @@ __all__ = [
     "PlanificacionResponse",
     "ResumenDiario",
     "ResumenSemanal",
+    "PlanificacionBulkRequest",
+    "PlanificacionBulkResponse",
     "ClientePlatoCreate",
     "ClientePlatoUpdate",
     "ClientePlatoResponse",

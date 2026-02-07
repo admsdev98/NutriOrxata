@@ -68,40 +68,412 @@ function CalorieBar({ total, objetivo }) {
   );
 }
 
-function AsignarPlatoModal({ onClose, onSave, dia, momento, platoActual, platos }) {
-  const [selectedId, setSelectedId] = useState(platoActual?.cliente_plato_id || null);
-  const [search, setSearch] = useState('');
+function roundToOneDecimal(value) {
+  return Math.round((value + Number.EPSILON) * 10) / 10;
+}
 
-  const disponibles = useMemo(() => {
-    return platos.filter(p => {
-      const momentos = Array.isArray(p.momentos_dia) && p.momentos_dia.length
-        ? p.momentos_dia
-        : (p.momento_dia ? [p.momento_dia] : []);
-      return momentos.includes(momento);
-    });
-  }, [platos, momento]);
+function EditarPlatoClienteModal({ clientId, plato, onClose, onSaved }) {
+  const [localPlato, setLocalPlato] = useState(() => ({ ...plato }));
+  const [targetKcal, setTargetKcal] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return disponibles;
-    return disponibles.filter(p => (p.plato_nombre || '').toLowerCase().includes(q));
-  }, [disponibles, search]);
+  useEffect(() => {
+    setLocalPlato({ ...plato });
+    setTargetKcal('');
+  }, [plato?.id]);
 
-  const selectedPlato = useMemo(() => platos.find(p => p.id === selectedId) || null, [platos, selectedId]);
+  function updateIngrediente(ingredienteId, value) {
+    setLocalPlato(prev => ({
+      ...prev,
+      ingredientes: (prev.ingredientes || []).map(i =>
+        i.ingrediente_id === ingredienteId
+          ? { ...i, cantidad_gramos: value }
+          : i
+      )
+    }));
+  }
+
+  function applyScaleToTargetKcal() {
+    const target = parseFloat(targetKcal) || 0;
+    const base = parseFloat(localPlato?.calorias_totales) || 0;
+    if (!target || !base) return;
+    const factor = target / base;
+    setLocalPlato(prev => ({
+      ...prev,
+      ingredientes: (prev.ingredientes || []).map(i => ({
+        ...i,
+        cantidad_gramos: roundToOneDecimal((parseFloat(i.cantidad_gramos) || 0) * factor),
+      }))
+    }));
+    setTargetKcal('');
+  }
+
+  async function save() {
+    try {
+      setSaving(true);
+      await api.clientesPlatos.update(clientId, localPlato.id, {
+        ingredientes: (localPlato.ingredientes || []).map(i => ({
+          ingrediente_id: i.ingrediente_id,
+          cantidad_gramos: parseFloat(i.cantidad_gramos) || 0,
+        }))
+      });
+      if (onSaved) onSaved();
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!localPlato) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Editar plato del cliente</h2>
+          <button className="btn-icon" onClick={onClose} aria-label="Cerrar">X</button>
+        </div>
+
+        <div className="modal-body custom-scrollbar">
+          <div className="card" style={{ marginBottom: '14px', background: 'var(--bg-card)' }}>
+            <div style={{ fontWeight: 900, marginBottom: '6px' }}>{localPlato.plato_nombre}</div>
+            <div className="text-secondary" style={{ fontSize: '0.9rem' }}>
+              {Math.round(localPlato.calorias_totales || 0)} kcal · {Math.round(localPlato.peso_total_gramos || 0)} g
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: '14px', background: 'var(--bg-input)' }}>
+            <div style={{ fontWeight: 800, marginBottom: '8px' }}>Ajustar por kcal</div>
+            <div className="flex" style={{ gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="number"
+                className="form-input"
+                style={{ maxWidth: 220 }}
+                placeholder="Kcal objetivo (ej: 550)"
+                value={targetKcal}
+                onChange={e => setTargetKcal(e.target.value)}
+              />
+              <button type="button" className="btn btn-secondary" onClick={applyScaleToTargetKcal}>
+                Aplicar
+              </button>
+            </div>
+            <div className="text-secondary" style={{ fontSize: '0.85rem', marginTop: '8px' }}>
+              Escala proporcionalmente todos los ingredientes.
+            </div>
+          </div>
+
+          <div className="card" style={{ background: 'var(--bg-input)' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '10px' }}>Ingredientes (g)</div>
+            <div className="stack" style={{ display: 'grid', gap: '8px' }}>
+              {(localPlato.ingredientes || []).map(ing => (
+                <div key={ing.ingrediente_id} className="flex" style={{ justifyContent: 'space-between', gap: '12px', alignItems: 'center', padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontWeight: 700, minWidth: 0, flex: 1 }}>{ing.ingrediente_nombre}</div>
+                  <div className="flex" style={{ gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ width: 110, textAlign: 'right' }}
+                      value={ing.cantidad_gramos}
+                      onChange={e => updateIngrediente(ing.ingrediente_id, e.target.value)}
+                    />
+                    <span className="text-secondary" style={{ fontWeight: 800 }}>g</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-primary" onClick={save} disabled={saving}>
+            {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AsignarPlatoModal({
+  onClose,
+  onSave,
+  onEditClientePlato,
+  onClientPlatosRefresh,
+  clientId,
+  dia,
+  momento,
+  platoActual,
+  basePlatos,
+  clientPlatos,
+  isAdmin
+}) {
+  const initialClienteSelected = useMemo(() => {
+    if (platoActual?.items?.length) {
+      return platoActual.items
+        .map(it => it?.cliente_plato_id)
+        .filter(Boolean);
+    }
+    if (platoActual?.cliente_plato_id) return [platoActual.cliente_plato_id];
+    return [];
+  }, [platoActual]);
+
+  const [libraryType, setLibraryType] = useState('client');
+  const [selectedClienteIds, setSelectedClienteIds] = useState(initialClienteSelected);
+  const [selectedBaseIds, setSelectedBaseIds] = useState([]);
+  const [search, setSearch] = useState('');
+
+  const [daysMode, setDaysMode] = useState('day');
+  const [selectedDays, setSelectedDays] = useState(() => new Set([dia]));
+  const [applyMode, setApplyMode] = useState('replace');
+
+  function getMomentos(item) {
+    if (!item) return [];
+    const momentos = Array.isArray(item.momentos_dia) && item.momentos_dia.length
+      ? item.momentos_dia
+      : (item.momento_dia ? [item.momento_dia] : []);
+    return momentos;
+  }
+
+  function getNombre(item) {
+    return item?.plato_nombre || item?.nombre || '';
+  }
+
+  const libraryItems = useMemo(() => {
+    const items = libraryType === 'base' ? (basePlatos || []) : (clientPlatos || []);
+    return items.filter(p => getMomentos(p).includes(momento));
+  }, [libraryType, basePlatos, clientPlatos, momento]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return libraryItems;
+    return libraryItems.filter(p => getNombre(p).toLowerCase().includes(q));
+  }, [libraryItems, search]);
+
+  const selectedDiasFinal = useMemo(() => {
+    if (!isAdmin || daysMode === 'day') return [dia];
+    if (daysMode === 'week') return DIAS;
+    return Array.from(selectedDays);
+  }, [isAdmin, daysMode, dia, selectedDays]);
+
+  function toggleDay(d) {
+    setSelectedDays(prev => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      if (next.size === 0) next.add(dia);
+      return next;
+    });
+  }
+
+  function toggleSelectedId(id) {
+    if (libraryType === 'base') {
+      setSelectedBaseIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+      return;
+    }
+    setSelectedClienteIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  }
+
+  const selectedCount = libraryType === 'base' ? selectedBaseIds.length : selectedClienteIds.length;
+
+  async function handleEditFromLibrary(item) {
+    try {
+      if (!clientId) return;
+      if (libraryType === 'base') {
+        // Create (or get) a cliente_plato from base template, then open editor.
+        const created = await api.clientesPlatos.create(clientId, {
+          plato_id: item.id,
+          momentos_dia: [momento],
+        });
+        if (onClientPlatosRefresh) await onClientPlatosRefresh();
+        if (created?.id) {
+          setLibraryType('client');
+          setSelectedClienteIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
+          if (onEditClientePlato) onEditClientePlato(created.id);
+        }
+        return;
+      }
+
+      // libraryType === 'client'
+      if (item?.id && onEditClientePlato) onEditClientePlato(item.id);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">{DIAS_DISPLAY[dia]} · {MOMENTOS_DISPLAY[momento]}</h2>
           <button className="btn-icon" onClick={onClose} aria-label="Cerrar">X</button>
         </div>
 
         <div className="modal-body custom-scrollbar">
-          {disponibles.length === 0 ? (
+          {isAdmin && (
+            <div className="card" style={{ padding: '12px 12px 10px', marginBottom: '14px', background: 'var(--bg-input)' }}>
+              <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: 800, marginBottom: '2px' }}>Aplicar</div>
+                  <div className="text-secondary" style={{ fontSize: '0.85rem' }}>
+                    {daysMode === 'day' ? 'Solo a este dia.' : daysMode === 'week' ? 'A toda la semana.' : 'A los dias seleccionados.'}
+                  </div>
+                </div>
+
+                <div className="flex" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{
+                      border: 'none',
+                      background: daysMode === 'day' ? 'var(--bg-card)' : 'transparent',
+                      boxShadow: daysMode === 'day' ? 'var(--shadow-sm)' : 'none',
+                      color: daysMode === 'day' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                    }}
+                    onClick={() => setDaysMode('day')}
+                  >
+                    Dia
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{
+                      border: 'none',
+                      background: daysMode === 'selected' ? 'var(--bg-card)' : 'transparent',
+                      boxShadow: daysMode === 'selected' ? 'var(--shadow-sm)' : 'none',
+                      color: daysMode === 'selected' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                    }}
+                    onClick={() => setDaysMode('selected')}
+                  >
+                    Varios
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{
+                      border: 'none',
+                      background: daysMode === 'week' ? 'var(--bg-card)' : 'transparent',
+                      boxShadow: daysMode === 'week' ? 'var(--shadow-sm)' : 'none',
+                      color: daysMode === 'week' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                    }}
+                    onClick={() => setDaysMode('week')}
+                  >
+                    Semana
+                  </button>
+                </div>
+              </div>
+
+              {daysMode === 'selected' && (
+                <div style={{ marginTop: '10px' }}>
+                  <div className="text-secondary" style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '8px' }}>Dias</div>
+                  <div className="flex" style={{ gap: '8px', flexWrap: 'wrap' }}>
+                    {DIAS.map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        className="btn btn-sm"
+                        style={{
+                          borderColor: selectedDays.has(d) ? 'var(--primary-500)' : 'var(--border-color)',
+                          background: selectedDays.has(d) ? 'var(--primary-50)' : 'var(--bg-card)',
+                          color: selectedDays.has(d) ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                        }}
+                        onClick={() => toggleDay(d)}
+                      >
+                        {DIAS_DISPLAY[d]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: '10px' }}>
+                <div className="text-secondary" style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '8px' }}>Modo</div>
+                <div className="flex" style={{ gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label className="flex" style={{ gap: '8px', alignItems: 'center', fontSize: '0.9rem' }}>
+                    <input type="radio" name="applyMode" checked={applyMode === 'replace'} onChange={() => setApplyMode('replace')} />
+                    <span><span style={{ fontWeight: 700 }}>Reemplazar</span><span className="text-secondary"> (deja solo estos)</span></span>
+                  </label>
+                  <label className="flex" style={{ gap: '8px', alignItems: 'center', fontSize: '0.9rem' }}>
+                    <input type="radio" name="applyMode" checked={applyMode === 'add'} onChange={() => setApplyMode('add')} />
+                    <span><span style={{ fontWeight: 700 }}>Anadir</span><span className="text-secondary"> (sumar a los actuales)</span></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="card" style={{ padding: '12px', marginBottom: '14px', background: 'var(--bg-card)' }}>
+            <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <div>
+                <div style={{ fontWeight: 800, marginBottom: '2px' }}>Seleccion de platos</div>
+                <div className="text-secondary" style={{ fontSize: '0.85rem' }}>
+                  {selectedCount} seleccionados · se aplica a {selectedDiasFinal.length} dia(s)
+                </div>
+              </div>
+              <div className="flex" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{
+                    border: 'none',
+                    background: libraryType === 'base' ? 'var(--bg-card)' : 'transparent',
+                    boxShadow: libraryType === 'base' ? 'var(--shadow-sm)' : 'none',
+                    color: libraryType === 'base' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                  }}
+                  onClick={() => setLibraryType('base')}
+                >
+                  Plantillas
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{
+                    border: 'none',
+                    background: libraryType === 'client' ? 'var(--bg-card)' : 'transparent',
+                    boxShadow: libraryType === 'client' ? 'var(--shadow-sm)' : 'none',
+                    color: libraryType === 'client' ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                  }}
+                  onClick={() => setLibraryType('client')}
+                >
+                  Del cliente
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {isAdmin && platoActual?.items?.length > 0 && (
+            <div className="card" style={{ padding: '12px', marginBottom: '14px', background: 'var(--bg-input)' }}>
+              <div style={{ fontWeight: 800, marginBottom: '8px' }}>Asignados en este hueco</div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {platoActual.items.map((it, idx) => (
+                  <div key={`${it.cliente_plato_id || 'x'}-${idx}`} className="flex" style={{ justifyContent: 'space-between', gap: '12px', alignItems: 'center', padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 800 }}>{it.plato_nombre}</div>
+                      <div className="text-secondary" style={{ fontSize: '0.85rem' }}>{Math.round(it.calorias || 0)} kcal</div>
+                    </div>
+                    {it.cliente_plato_id ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => onEditClientePlato && onEditClientePlato(it.cliente_plato_id)}
+                      >
+                        Editar
+                      </button>
+                    ) : (
+                      <span className="text-secondary" style={{ fontSize: '0.85rem', fontWeight: 800 }}>Sin edicion</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {libraryItems.length === 0 ? (
             <div className="text-center" style={{ padding: '20px 0' }}>
               <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '6px' }}>Sin platos disponibles</div>
-              <div className="text-secondary" style={{ fontSize: '0.95rem' }}>Asigna platos a este momento para poder planificar.</div>
+              <div className="text-secondary" style={{ fontSize: '0.95rem' }}>No hay platos para este momento.</div>
             </div>
           ) : (
             <>
@@ -123,45 +495,78 @@ function AsignarPlatoModal({ onClose, onSave, dia, momento, platoActual, platos 
                   style={{
                     padding: '14px',
                     textAlign: 'left',
-                    borderColor: selectedId === null ? 'var(--primary-500)' : 'var(--border-color)',
-                    background: selectedId === null ? 'var(--primary-50)' : 'var(--bg-card)'
+                    borderColor: selectedCount === 0 ? 'var(--primary-500)' : 'var(--border-color)',
+                    background: selectedCount === 0 ? 'var(--primary-50)' : 'var(--bg-card)'
                   }}
-                  onClick={() => setSelectedId(null)}
+                  onClick={() => {
+                    if (libraryType === 'base') setSelectedBaseIds([]);
+                    else setSelectedClienteIds([]);
+                  }}
                 >
                   <div style={{ fontWeight: 800, marginBottom: '4px' }}>Sin asignar</div>
                   <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Vaciar este hueco.</div>
                 </button>
 
-                {filtered.map(plato => (
-                  <button
-                    key={plato.id}
-                    type="button"
-                    className="card"
-                    style={{
-                      padding: '14px',
-                      textAlign: 'left',
-                      borderColor: selectedId === plato.id ? 'var(--primary-500)' : 'var(--border-color)',
-                      background: selectedId === plato.id ? 'var(--primary-50)' : 'var(--bg-card)'
-                    }}
-                    onClick={() => setSelectedId(plato.id)}
-                  >
-                    <div style={{ fontWeight: 800, marginBottom: '6px' }}>{plato.plato_nombre}</div>
-                    <div className="text-secondary" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span className="badge badge-secondary">{Math.round(plato.calorias_totales)} kcal</span>
-                      <span className="badge badge-secondary">{plato.peso_total_gramos} g</span>
-                    </div>
-                  </button>
-                ))}
+                {filtered.map(plato => {
+                  const id = plato.id;
+                  const isChecked = libraryType === 'base'
+                    ? selectedBaseIds.includes(id)
+                    : selectedClienteIds.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className="card"
+                      style={{
+                        padding: '14px',
+                        textAlign: 'left',
+                        borderColor: isChecked ? 'var(--primary-500)' : 'var(--border-color)',
+                        background: isChecked ? 'var(--primary-50)' : 'var(--bg-card)'
+                      }}
+                      onClick={() => toggleSelectedId(id)}
+                    >
+                      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ fontWeight: 800, marginBottom: '6px' }}>{getNombre(plato)}</div>
+                        <div className="flex" style={{ gap: '10px', alignItems: 'center' }}>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditFromLibrary(plato);
+                              }}
+                            >
+                              Editar
+                            </button>
+                          )}
+                          <input type="checkbox" checked={isChecked} readOnly style={{ marginTop: '2px' }} />
+                        </div>
+                      </div>
+                      <div className="text-secondary" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="badge badge-secondary">{Math.round(plato.calorias_totales || 0)} kcal</span>
+                        <span className="badge badge-secondary">{Math.round(plato.peso_total_gramos || 0)} g</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}
 
-          {(selectedPlato || platoActual?.ingredientes?.length) && (
+          {libraryType === 'client' && (selectedClienteIds.length > 0 || platoActual?.items?.length) && (
             <div className="card" style={{ background: 'var(--bg-input)' }}>
               <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '10px' }}>Ingredientes</div>
               <div className="stack" style={{ display: 'grid', gap: '8px' }}>
-                {(selectedPlato?.ingredientes || platoActual?.ingredientes || []).map(ing => (
-                  <div key={ing.ingrediente_id} className="flex justify-between" style={{ padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                {(() => {
+                  const source = selectedClienteIds.length
+                    ? (clientPlatos || []).filter(p => selectedClienteIds.includes(p.id))
+                    : (platoActual?.items || []);
+                  const ingredients = [];
+                  source.forEach(p => (p.ingredientes || []).forEach(ing => ingredients.push(ing)));
+                  return ingredients;
+                })().map((ing, idx) => (
+                  <div key={`${ing.ingrediente_id}-${idx}`} className="flex justify-between" style={{ padding: '10px 12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                     <span style={{ fontWeight: 600 }}>{ing.ingrediente_nombre}</span>
                     <span className="text-secondary" style={{ fontWeight: 700 }}>{ing.cantidad_gramos} g</span>
                   </div>
@@ -173,7 +578,18 @@ function AsignarPlatoModal({ onClose, onSave, dia, momento, platoActual, platos 
 
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-          <button type="button" className="btn btn-primary" onClick={() => onSave(selectedId)}>Guardar</button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => onSave({
+              dias: selectedDiasFinal,
+              mode: isAdmin ? applyMode : 'replace',
+              basePlatoIds: libraryType === 'base' ? selectedBaseIds : [],
+              clientePlatoIds: libraryType === 'client' ? selectedClienteIds : [],
+            })}
+          >
+            Guardar
+          </button>
         </div>
       </div>
     </div>
@@ -191,16 +607,26 @@ export default function Planificador() {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientPlatos, setClientPlatos] = useState([]);
+  const [basePlatos, setBasePlatos] = useState([]);
   const [semanaInicio, setSemanaInicio] = useState(() => getMonday());
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalData, setModalData] = useState(null);
+  const [editClientePlato, setEditClientePlato] = useState(null);
   const [viewMode, setViewMode] = useState(() => (window.innerWidth < 1100 ? 'day' : 'week'));
   const [selectedDay, setSelectedDay] = useState(() => dayKeyFromDate());
 
+  const clientIdParam = useMemo(() => {
+    if (!isAdmin) return null;
+    const value = searchParams.get('clientId');
+    if (!value) return null;
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [searchParams, isAdmin]);
+
   useEffect(() => {
     if (isAdmin) {
-      loadClientes();
+      loadClientes(clientIdParam);
       return;
     }
     if (user) {
@@ -208,7 +634,7 @@ export default function Planificador() {
       setSelectedClient(user);
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, clientIdParam]);
 
   useEffect(() => {
     const dateParam = searchParams.get('date');
@@ -244,17 +670,33 @@ export default function Planificador() {
     }
   }, [selectedClientId, semanaInicio]);
 
-  async function loadClientes() {
+  useEffect(() => {
+    loadBasePlatos();
+  }, []);
+
+  async function loadBasePlatos() {
+    try {
+      const data = await api.platos.list();
+      setBasePlatos(data?.items || data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      setBasePlatos([]);
+    }
+  }
+
+  async function loadClientes(preferredClientId = null) {
     try {
       setLoading(true);
       const data = await api.auth.listUsers({ rol: 'cliente' });
       const items = data.items || [];
       setClientes(items);
-      if (items.length > 0 && !selectedClientId) {
-        setSelectedClientId(items[0].id);
-        setSelectedClient(items[0]);
-      } else if (selectedClientId) {
-        setSelectedClient(items.find(c => c.id === selectedClientId) || null);
+      if (items.length > 0) {
+        const preferredId = preferredClientId || selectedClientId;
+        const nextClient = preferredId
+          ? items.find(c => c.id === preferredId) || items[0]
+          : items[0];
+        setSelectedClientId(nextClient.id);
+        setSelectedClient(nextClient);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -271,6 +713,15 @@ export default function Planificador() {
       console.error('Error:', error);
       setClientPlatos([]);
     }
+  }
+
+  function openEditClientePlato(clientePlatoId) {
+    const found = (clientPlatos || []).find(p => p.id === clientePlatoId);
+    if (!found) {
+      alert('No se encontro el plato del cliente. Recarga la pagina e intentalo de nuevo.');
+      return;
+    }
+    setEditClientePlato(found);
   }
 
   async function loadResumen() {
@@ -327,18 +778,23 @@ export default function Planificador() {
     else nextDay();
   }
 
-  async function handleSavePlanificacion(clientePlatoId) {
+  async function handleSavePlanificacion({ basePlatoIds, clientePlatoIds, dias, mode }) {
     try {
-      await api.planificacion.create({
-        semana_inicio: formatDate(semanaInicio),
-        dia: modalData.dia,
-        momento: modalData.momento,
-        plato_id: null,
-        cliente_plato_id: clientePlatoId,
+      const semana = formatDate(semanaInicio);
+      const momento = modalData.momento;
+
+      await api.planificacion.bulk({
+        semana_inicio: semana,
         client_id: selectedClientId,
+        momento,
+        dias: dias && dias.length ? dias : [modalData.dia],
+        base_plato_ids: basePlatoIds && basePlatoIds.length ? basePlatoIds : undefined,
+        cliente_plato_ids: clientePlatoIds && clientePlatoIds.length ? clientePlatoIds : [],
+        mode: mode || 'replace',
       });
       setModalData(null);
       loadResumen();
+      loadClientPlatos();
     } catch (error) {
       alert('Error: ' + error.message);
     }
@@ -346,13 +802,13 @@ export default function Planificador() {
 
   async function handleClearMeal(dia, momento) {
     try {
-      await api.planificacion.create({
+      await api.planificacion.bulk({
         semana_inicio: formatDate(semanaInicio),
-        dia,
-        momento,
-        plato_id: null,
-        cliente_plato_id: null,
         client_id: selectedClientId,
+        momento,
+        dias: [dia],
+        cliente_plato_ids: [],
+        mode: 'replace',
       });
       loadResumen();
     } catch (error) {
@@ -474,7 +930,7 @@ export default function Planificador() {
           className="card"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          style={{ maxWidth: 780, marginLeft: 'auto', marginRight: 'auto' }}
+          style={{ width: '100%' }}
         >
           <div style={{ marginBottom: '18px' }}>
             <div style={{ fontWeight: 900, fontSize: '1.3rem', marginBottom: '8px', textTransform: 'capitalize' }}>{DIAS_DISPLAY[selectedDay]}</div>
@@ -510,7 +966,14 @@ export default function Planificador() {
                   {comida ? (
                     <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                       <div>
-                        <div style={{ fontWeight: 700, marginBottom: '2px' }}>{comida.plato_nombre}</div>
+                        <div style={{ fontWeight: 700, marginBottom: '2px' }}>
+                          {(() => {
+                            const items = comida.items || [];
+                            if (items.length === 0) return comida.plato_nombre;
+                            const first = items[0]?.plato_nombre || 'Plato';
+                            return items.length > 1 ? `${first} +${items.length - 1}` : first;
+                          })()}
+                        </div>
                         <div className="text-secondary" style={{ fontSize: '0.9rem' }}>Click para cambiar</div>
                       </div>
                       <button
@@ -527,6 +990,29 @@ export default function Planificador() {
                     </div>
                   ) : (
                     <div className="text-secondary" style={{ fontSize: '0.9rem' }}>Click para asignar un plato.</div>
+                  )}
+
+                  {isAdmin && comida?.items?.length > 0 && (
+                    <div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
+                      {comida.items.slice(0, 2).map((it, idx) => (
+                        <button
+                          key={`${it.cliente_plato_id || 'x'}-${idx}`}
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (it.cliente_plato_id) openEditClientePlato(it.cliente_plato_id);
+                          }}
+                        >
+                          Editar: {it.plato_nombre}
+                        </button>
+                      ))}
+                      {comida.items.length > 2 && (
+                        <div className="text-secondary" style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                          +{comida.items.length - 2} mas (edita desde Platos del cliente si lo necesitas)
+                        </div>
+                      )}
+                    </div>
                   )}
                 </button>
               );
@@ -571,20 +1057,41 @@ export default function Planificador() {
 
                             {comida ? (
                               <>
-                                <div style={{ fontWeight: 800, marginBottom: '6px' }}>{comida.plato_nombre}</div>
+                                <div style={{ fontWeight: 800, marginBottom: '6px' }}>
+                                  {(() => {
+                                    const items = comida.items || [];
+                                    if (items.length === 0) return comida.plato_nombre;
+                                    const first = items[0]?.plato_nombre || 'Plato';
+                                    return items.length > 1 ? `${first} +${items.length - 1}` : first;
+                                  })()}
+                                </div>
                                 <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                                   <span className="badge badge-primary">{Math.round(comida.calorias)} kcal</span>
-                                  <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleClearMeal(dia, momento);
-                                    }}
-                                    style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}
-                                  >
-                                    Quitar
-                                  </button>
+                                  <div className="flex" style={{ gap: '8px', alignItems: 'center' }}>
+                                    {isAdmin && comida.items?.length === 1 && comida.items[0]?.cliente_plato_id && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openEditClientePlato(comida.items[0].cliente_plato_id);
+                                        }}
+                                      >
+                                        Editar
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleClearMeal(dia, momento);
+                                      }}
+                                      style={{ borderColor: 'rgba(239,68,68,0.3)', color: 'var(--accent-error)' }}
+                                    >
+                                      Quitar
+                                    </button>
+                                  </div>
                                 </div>
                               </>
                             ) : (
@@ -607,9 +1114,26 @@ export default function Planificador() {
           dia={modalData.dia}
           momento={modalData.momento}
           platoActual={modalData.platoActual}
-          platos={clientPlatos}
+          basePlatos={basePlatos}
+          clientPlatos={clientPlatos}
+          isAdmin={isAdmin}
+          clientId={selectedClientId}
           onClose={() => setModalData(null)}
           onSave={handleSavePlanificacion}
+          onEditClientePlato={(clientePlatoId) => openEditClientePlato(clientePlatoId)}
+          onClientPlatosRefresh={loadClientPlatos}
+        />
+      )}
+
+      {isAdmin && editClientePlato && (
+        <EditarPlatoClienteModal
+          clientId={selectedClientId}
+          plato={editClientePlato}
+          onClose={() => setEditClientePlato(null)}
+          onSaved={() => {
+            loadClientPlatos();
+            loadResumen();
+          }}
         />
       )}
     </div>

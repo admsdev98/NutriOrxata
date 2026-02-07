@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import ClientProfilePanel from '../components/client/ClientProfilePanel';
-import ClientNutritionPanel from '../components/client/ClientNutritionPanel';
 import ClientWorkoutPanel from '../components/client/ClientWorkoutPanel';
 
 function ClienteDetalle() {
@@ -10,7 +9,7 @@ function ClienteDetalle() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('profile'); // profile, nutrition, workout
+  const [activeTab, setActiveTab] = useState('profile'); // profile, workout
 
   useEffect(() => {
     loadUser();
@@ -86,7 +85,7 @@ function ClienteDetalle() {
   if (!user) return null;
 
   return (
-    <div className="animate-fade-in max-w-5xl mx-auto">
+    <div className="animate-fade-in w-full">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -130,7 +129,7 @@ function ClienteDetalle() {
           </button>
           <button 
              className={`px-6 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'nutrition' ? 'border-primary-500 text-primary-500' : 'border-transparent text-secondary hover:text-main'}`}
-             onClick={() => setActiveTab('nutrition')}
+              onClick={() => navigate(`/plan-nutricional?clientId=${user.id}`)}
           >
              Plan nutricional
           </button>
@@ -145,7 +144,6 @@ function ClienteDetalle() {
       {/* CONTENT */}
       <div className="min-h-[500px]">
           {activeTab === 'profile' && <ClientProfilePanel user={user} onSave={loadUser} />}
-          {activeTab === 'nutrition' && <ClientNutritionPanel user={user} onSave={loadUser} />}
           {activeTab === 'workout' && <ClientWorkoutPanel user={user} onSave={loadUser} />}
       </div>
     </div>

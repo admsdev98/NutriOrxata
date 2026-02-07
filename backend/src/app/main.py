@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
-from app.routers import ingredientes_router, platos_router, planificacion_router, clientes_platos_router
+from app.database import engine
+from app.routers import ingredientes_router, platos_router, planificacion_router, clientes_platos_router, work_planner_router
 from app.routers.auth import router as auth_router
+from app.utils.schema import ensure_planificacion_items_schema
 
 settings = get_settings()
 
@@ -46,6 +48,13 @@ app.include_router(platos_router)
 
 app.include_router(planificacion_router)
 app.include_router(clientes_platos_router)
+app.include_router(work_planner_router)
+
+
+@app.on_event("startup")
+def ensure_optional_schemas() -> None:
+    # Avoid runtime errors when new tables are introduced.
+    ensure_planificacion_items_schema(engine)
 
 
 @app.get("/api/health")

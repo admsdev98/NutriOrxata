@@ -49,6 +49,8 @@ function UserPlatosModal({ user, onClose, onSave }) {
   const [platosAsociados, setPlatosAsociados] = useState([]);
   const [libraryFilter, setLibraryFilter] = useState('');
   const [selectedMoment, setSelectedMoment] = useState('desayuno');
+  const [selectedLibraryIds, setSelectedLibraryIds] = useState(() => new Set());
+  const [openEditorOnAdd, setOpenEditorOnAdd] = useState(true);
   const [expandedPlatoId, setExpandedPlatoId] = useState(null);
   const [savingPlatoId, setSavingPlatoId] = useState(null);
   const [loadingPlatos, setLoadingPlatos] = useState(true);
@@ -107,6 +109,19 @@ function UserPlatosModal({ user, onClose, onSave }) {
     } finally {
       setLoadingPlatos(false);
     }
+  }
+
+  function toggleLibrarySelect(platoId) {
+    setSelectedLibraryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(platoId)) next.delete(platoId);
+      else next.add(platoId);
+      return next;
+    });
+  }
+
+  function clearLibrarySelection() {
+    setSelectedLibraryIds(new Set());
   }
 
   function setAdjustment(platoId, key, value) {
@@ -256,6 +271,32 @@ function UserPlatosModal({ user, onClose, onSave }) {
     if (adjustMode === 'percent') {
       await applyDistributionToMoment(selectedMoment);
     }
+    if (openEditorOnAdd) {
+      const asociadosResponse = await api.clientesPlatos.list(user.id);
+      const asociados = asociadosResponse?.items || asociadosResponse || [];
+      const found = asociados.find(p => (p.plato_id === platoId || p.plato_id === parseInt(platoId, 10)) && (p.momentos_dia || []).includes(selectedMoment));
+      if (found) setExpandedPlatoId(found.id);
+    }
+  }
+
+  async function handleAddSelectedPlatos() {
+    const ids = Array.from(selectedLibraryIds);
+    if (!ids.length) return;
+    await assignPlatosToMomento(ids, selectedMoment);
+    if (adjustMode === 'percent') {
+      await applyDistributionToMoment(selectedMoment);
+    }
+    if (openEditorOnAdd) {
+      try {
+        const asociadosResponse = await api.clientesPlatos.list(user.id);
+        const asociados = asociadosResponse?.items || asociadosResponse || [];
+        const first = asociados.find(p => ids.includes(p.plato_id) && (p.momentos_dia || []).includes(selectedMoment));
+        if (first) setExpandedPlatoId(first.id);
+      } catch (e) {
+        // ignore
+      }
+    }
+    clearLibrarySelection();
   }
 
   async function handleDeletePlato(id) {
@@ -418,21 +459,39 @@ function UserPlatosModal({ user, onClose, onSave }) {
 
               <div className="planner-split">
                 <div className="planner-pane">
-                  <div className="planner-pane-header">
-                    <div>
-                      <div className="form-label">Alimentos disponibles</div>
-                      <div className="text-muted text-sm">Categoria: {MOMENTOS_DISPLAY[selectedMoment].label}</div>
-                    </div>
-                    <div className="planner-search">
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={libraryFilter}
-                        onChange={e => setLibraryFilter(e.target.value)}
-                        placeholder="Buscar plato..."
-                      />
-                    </div>
+              <div className="planner-pane-header">
+                <div>
+                  <div className="form-label">Alimentos disponibles</div>
+                  <div className="text-muted text-sm">Categoria: {MOMENTOS_DISPLAY[selectedMoment].label}</div>
+                </div>
+                <div className="planner-search">
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={libraryFilter}
+                    onChange={e => setLibraryFilter(e.target.value)}
+                    placeholder="Buscar plato..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                <label className="flex" style={{ gap: '10px', alignItems: 'center', fontSize: '0.9rem' }}>
+                  <input type="checkbox" checked={openEditorOnAdd} onChange={e => setOpenEditorOnAdd(e.target.checked)} />
+                  <span>
+                    <span style={{ fontWeight: 800 }}>Abrir editor al anadir</span>
+                    <span className="text-muted"> (para personalizar kcal/ingredientes)</span>
+                  </span>
+                </label>
+
+                {selectedLibraryIds.size > 0 && (
+                  <div className="flex" style={{ gap: '8px', alignItems: 'center' }}>
+                    <span className="text-muted text-sm" style={{ fontWeight: 800 }}>{selectedLibraryIds.size} seleccionados</span>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={clearLibrarySelection}>Limpiar</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleAddSelectedPlatos}>Anadir seleccion</button>
                   </div>
+                )}
+              </div>
 
                   <div className="platos-selector-list">
                     {filteredPlatos.length === 0 ? (
@@ -441,10 +500,18 @@ function UserPlatosModal({ user, onClose, onSave }) {
                       filteredPlatos.map(plato => {
                         const momentos = getPlatoMomentos(plato);
                         const assigned = associatedMomentsMap.get(String(plato.id));
+                        const isSelected = selectedLibraryIds.has(plato.id);
                         return (
                           <div key={plato.id} className="platos-selector-item">
                             <div className="platos-item-main">
-                              <div className="platos-item-name">{plato.nombre}</div>
+                              <div className="flex" style={{ gap: '10px', alignItems: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleLibrarySelect(plato.id)}
+                                />
+                                <div className="platos-item-name">{plato.nombre}</div>
+                              </div>
                               <div className="platos-tags">
                                 {momentos.length > 0 ? (
                                   momentos.map(momento => (

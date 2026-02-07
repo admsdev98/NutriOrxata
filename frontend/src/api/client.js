@@ -17,6 +17,29 @@ function getUser() {
   return user ? JSON.parse(user) : null;
 }
 
+function getRoleOverride() {
+  const role = localStorage.getItem('nutriorxata_role_override');
+  return role || null;
+}
+
+function setRoleOverride(role) {
+  if (!role) {
+    localStorage.removeItem('nutriorxata_role_override');
+    return;
+  }
+  localStorage.setItem('nutriorxata_role_override', role);
+}
+
+function getEffectiveUser() {
+  const user = getUser();
+  if (!user) return null;
+
+  const override = getRoleOverride();
+  if (!override) return user;
+
+  return { ...user, rol: override };
+}
+
 function setUser(user) {
   localStorage.setItem('nutriorxata_user', JSON.stringify(user));
 }
@@ -86,10 +109,13 @@ export const api = {
     },
     me: () => request('/api/auth/me'),
     getUser,
+    getEffectiveUser,
     getToken,
+    getRoleOverride,
+    setRoleOverride,
     isAuthenticated: () => !!getToken(),
     isAdmin: () => {
-      const user = getUser();
+      const user = getEffectiveUser();
       return user?.rol === 'admin';
     },
     register: (data) => request('/api/auth/register', { method: 'POST', body: data }),
@@ -140,8 +166,43 @@ export const api = {
       return request(`/api/planificacion/resumen/${clientId}${params}`);
     },
     create: (data) => request('/api/planificacion', { method: 'POST', body: data }),
+    bulk: (data) => request('/api/planificacion/bulk', { method: 'POST', body: data }),
     update: (id, data) => request(`/api/planificacion/${id}`, { method: 'PUT', body: data }),
     delete: (id) => request(`/api/planificacion/${id}`, { method: 'DELETE' }),
+  },
+
+  workPlanner: {
+    tasks: {
+      list: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return request(`/api/work-planner/tasks${query ? `?${query}` : ''}`);
+      },
+      create: (data) => request('/api/work-planner/tasks', { method: 'POST', body: data }),
+      update: (id, data) => request(`/api/work-planner/tasks/${id}`, { method: 'PUT', body: data }),
+      delete: (id) => request(`/api/work-planner/tasks/${id}`, { method: 'DELETE' }),
+    },
+    appointments: {
+      list: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return request(`/api/work-planner/appointments${query ? `?${query}` : ''}`);
+      },
+      create: (data) => request('/api/work-planner/appointments', { method: 'POST', body: data }),
+      update: (id, data) => request(`/api/work-planner/appointments/${id}`, { method: 'PUT', body: data }),
+      delete: (id) => request(`/api/work-planner/appointments/${id}`, { method: 'DELETE' }),
+    },
+    notes: {
+      list: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return request(`/api/work-planner/notes${query ? `?${query}` : ''}`);
+      },
+      create: (data) => request('/api/work-planner/notes', { method: 'POST', body: data }),
+      update: (id, data) => request(`/api/work-planner/notes/${id}`, { method: 'PUT', body: data }),
+      delete: (id) => request(`/api/work-planner/notes/${id}`, { method: 'DELETE' }),
+    },
+    summary: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/api/work-planner/summary${query ? `?${query}` : ''}`);
+    },
   },
 
   clientesPlatos: {

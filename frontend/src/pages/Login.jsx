@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,6 +15,18 @@ export default function Login() {
     password: '',
     confirmPassword: ''
   });
+
+  useEffect(() => {
+    const mode = new URLSearchParams(location.search).get('mode');
+    if (mode === 'register') {
+      setIsLogin(false);
+      setError('');
+    }
+    if (mode === 'login') {
+      setIsLogin(true);
+      setError('');
+    }
+  }, [location.search]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -80,6 +93,14 @@ export default function Login() {
         background: 'var(--bg-app)'
       }}>
         <div style={{ width: '100%', maxWidth: '440px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/')}
+              style={{ paddingLeft: '12px', paddingRight: '12px' }}
+            >
+              Volver a la home
+            </button>
+          </div>
+
           <div className="text-center mb-4">
             <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>
               {isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}

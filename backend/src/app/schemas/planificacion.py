@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime, date
 
 
@@ -51,3 +51,18 @@ class ResumenSemanal(BaseModel):
     client_id: int
     client_nombre: str
     dias: List[ResumenDiario]
+
+
+class PlanificacionBulkRequest(BaseModel):
+    semana_inicio: date
+    client_id: int
+    momento: str
+    dias: List[str]
+    base_plato_ids: Optional[List[int]] = None
+    cliente_plato_ids: Optional[List[int]] = None
+    mode: Literal["replace", "add", "skip_if_filled"] = "replace"
+
+
+class PlanificacionBulkResponse(BaseModel):
+    applied: int
+    skipped: int

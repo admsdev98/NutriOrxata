@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Ingredientes from './pages/Ingredientes';
 import Platos from './pages/Platos';
-import Planificador from './pages/Planificador'; // Worker Daily View
+import Planificador from './pages/Planificador';
+import PlanificadorTrabajoPage from './pages/PlanificadorTrabajoPage';
 import GestionPlatos from './pages/GestionPlatos'; // Admin Meal Planner
 import Usuarios from './pages/Usuarios';
 import Login from './pages/Login';
@@ -33,45 +34,69 @@ function ProtectedRoute({ children, adminOnly = false }) {
 
 function Sidebar({ theme, onToggleTheme }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const user = api.auth.getUser();
+  const rawUser = api.auth.getUser();
+  const user = api.auth.getEffectiveUser();
   const isAdmin = api.auth.isAdmin();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === '1');
+  const [roleOverride, setRoleOverride] = useState(() => api.auth.getRoleOverride());
 
   useEffect(() => {
     function handleResize() {
-      if (window.innerWidth >= 900) setIsMenuOpen(false);
+      // Collapsed sidebar is a desktop-only behavior.
+      if (window.innerWidth < 900) setIsCollapsed(false);
     }
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Close menu on route change
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+    localStorage.setItem('sidebarCollapsed', isCollapsed ? '1' : '0');
+  }, [isCollapsed]);
 
   function handleLogout() {
     api.auth.logout();
     navigate('/login');
   }
 
+  function handleToggleRole() {
+    const next = roleOverride === 'cliente' ? null : 'cliente';
+    api.auth.setRoleOverride(next);
+    setRoleOverride(next);
+    navigate('/dashboard');
+  }
+
   return (
     <>
-      <button
-        type="button"
-        className="menu-toggle btn-icon"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        {isMenuOpen ? 'X' : 'Menu'}
-      </button>
+      {isCollapsed && (
+        <button
+          type="button"
+          className="sidebar-expand-toggle btn-icon"
+          onClick={() => setIsCollapsed(false)}
+          title="Expandir navbar"
+          aria-label="Expandir navbar"
+          style={{ position: 'fixed', top: '16px', left: '16px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          &gt;&gt;
+        </button>
+      )}
 
-      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
+      {!isCollapsed && (
+      <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
             <span>NutriOrxata</span>
           </div>
+
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={() => setIsCollapsed(true)}
+            title="Contraer navbar"
+            aria-label="Contraer navbar"
+            style={{ border: '1px solid var(--border-color)', background: 'var(--bg-input)' }}
+          >
+            &lt;&lt;
+          </button>
         </div>
 
         <nav className="sidebar-nav" style={{ flex: 1 }}>
@@ -80,17 +105,20 @@ function Sidebar({ theme, onToggleTheme }) {
           </div>
           
           <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <span>Dashboard</span>
+            <span>Inicio</span>
           </NavLink>
 
-          <NavLink to="/planificador" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <span>{isAdmin ? 'Planificador' : 'Mi Plan'}</span>
+          <NavLink
+            to={isAdmin ? '/planificador-trabajo' : '/plan-nutricional'}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <span>{isAdmin ? 'Planificador de trabajo' : 'Mi Plan'}</span>
           </NavLink>
 
           {/* Client Specific */}
           {!isAdmin && (
             <NavLink to="/entrenamiento" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <span>Entrenamiento</span>
+              <span>Entrenamientos</span>
             </NavLink>
           )}
 
@@ -107,24 +135,34 @@ function Sidebar({ theme, onToggleTheme }) {
               <NavLink to="/mensajes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <span>Mensajes</span>
               </NavLink>
-              <NavLink to="/rutinas" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>Rutinas</span>
+
+              <div className="nav-divider" />
+              <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
+                Planificación clientes
+              </div>
+              <NavLink to="/gestion-platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>Asignar menús semanales</span>
               </NavLink>
+              <NavLink to="/rutinas" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <span>Asignar entrenamientos</span>
+              </NavLink>
+
+              <div className="nav-divider" />
+              <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
+                Bases
+              </div>
               <NavLink to="/ingredientes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>Ingredientes</span>
+                <span>Ingredientes base</span>
               </NavLink>
               <NavLink to="/platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>Platos</span>
-              </NavLink>
-              <NavLink to="/gestion-platos" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <span>Gestion platos</span>
+                <span>Platos base</span>
               </NavLink>
             </>
           )}
 
           <div className="nav-divider" />
           <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', paddingLeft: '16px', fontWeight: 600 }}>
-            Cuenta
+            Ajustes
           </div>
           
           <NavLink to="/perfil" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -134,6 +172,18 @@ function Sidebar({ theme, onToggleTheme }) {
           <NavLink to="/ayuda" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
              <span>Ayuda</span>
           </NavLink>
+
+          {import.meta.env.DEV && rawUser?.rol === 'admin' && (
+            <button
+              type="button"
+              className="nav-link"
+              onClick={handleToggleRole}
+              style={{ textAlign: 'left', width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              title="Solo local: alterna la interfaz entre admin y cliente"
+            >
+              <span>{roleOverride === 'cliente' ? 'Volver a admin' : 'Cambiar a cliente'}</span>
+            </button>
+          )}
         </nav>
 
         <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
@@ -148,7 +198,12 @@ function Sidebar({ theme, onToggleTheme }) {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button onClick={onToggleTheme} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center' }}>
+            <button
+              onClick={onToggleTheme}
+              className="btn btn-secondary btn-sm"
+              style={{ justifyContent: 'center' }}
+              title={theme === 'dark' ? 'Cambiar a claro' : 'Cambiar a oscuro'}
+            >
               {theme === 'dark' ? 'Claro' : 'Oscuro'}
             </button>
             <button onClick={handleLogout} className="btn btn-secondary btn-sm" style={{ justifyContent: 'center', color: 'var(--accent-error)', borderColor: 'rgba(239,68,68,0.3)' }}>
@@ -157,6 +212,7 @@ function Sidebar({ theme, onToggleTheme }) {
           </div>
         </div>
       </aside>
+      )}
     </>
   );
 }
@@ -168,7 +224,8 @@ function AppLayout({ theme, onToggleTheme }) {
       <main className="main-content">
         <Routes>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/planificador" element={<ProtectedRoute><Planificador /></ProtectedRoute>} />
+          <Route path="/plan-nutricional" element={<ProtectedRoute><Planificador /></ProtectedRoute>} />
+          <Route path="/planificador-trabajo" element={<ProtectedRoute adminOnly><PlanificadorTrabajoPage /></ProtectedRoute>} />
           <Route path="/gestion-platos" element={<ProtectedRoute adminOnly><GestionPlatos /></ProtectedRoute>} />
           
           <Route path="/entrenamiento" element={<ProtectedRoute><Entrenamiento /></ProtectedRoute>} />
