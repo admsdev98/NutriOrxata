@@ -84,6 +84,7 @@ services:
       S3_BUCKET_MAIN: ${S3_BUCKET_MAIN:-nutriorxata}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:?set SENDGRID_API_KEY}
       SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:?set SENDGRID_FROM_EMAIL}
+      PUBLIC_API_BASE_URL: https://${PUBLIC_HOST}/api
       UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
     depends_on:
       db:
@@ -107,6 +108,7 @@ services:
       S3_BUCKET_MAIN: ${S3_BUCKET_MAIN:-nutriorxata}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:?set SENDGRID_API_KEY}
       SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:?set SENDGRID_FROM_EMAIL}
+      PUBLIC_API_BASE_URL: https://${PUBLIC_HOST}/api
     depends_on:
       db:
         condition: service_healthy
