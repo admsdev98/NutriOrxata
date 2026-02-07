@@ -6,7 +6,7 @@ trigger: explicit
 
 # Skill Generator
 
-This skill acts as a meta-agent to scaffold and register new capabilities within the CourtVision ecosystem. It ensures that all new skills follow the strict structural and documentation standards of the project.
+This skill acts as a meta-agent to scaffold and register new capabilities within the NutriOrxata repo. It ensures that all new skills follow the structural and documentation standards of the project.
 
 ## Activation Triggers
 - "Create a new skill"
@@ -30,8 +30,8 @@ If the user hasn't provided full details, the agent **MUST** ask for the missing
 Once requirements are clear:
 1.  Create directory: `skills/<skill-name>/`.
 2.  Generate file: `skills/<skill-name>/SKILL.md` using the **Standard Skill Template** (below).
-3.  **Automatically Register (Global):** Add the new skill entry to the root `AGENTS.md` file in the `Sistema de Skills` section, following the existing format.
-4.  **Automatically Register (Local - Optional):** If the skill is specific to a microservice or module (e.g., `auth`, `web`), check for a local `AGENTS.md` in that directory (e.g., `src/services/auth/AGENTS.md`) and add a reference to the new skill there as well.
+3.  **Register (Global):** Add the new skill entry to `docs/SKILLS_CATALOG.md`.
+4.  **Optional:** Add a short note in root `AGENTS.md` if the skill changes daily workflows.
 
 ## Standard Skill Template
 
@@ -66,4 +66,4 @@ trigger: <implicit|explicit>
 
 ## 3. Post-Generation Check
 *   Confirm to the user that the skill is created and registered.
-*   Show the updated list of skills in `AGENTS.md` (briefly).
+*   Show the updated list of skills in `docs/SKILLS_CATALOG.md` (briefly).

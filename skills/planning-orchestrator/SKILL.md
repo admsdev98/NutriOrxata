@@ -21,9 +21,9 @@ This skill is designed to bridge the gap between high-level roadmap goals and co
 
 1.  **Context Reconnaissance (Read-Only)**
     *   Read `AGENTS.md` (Global & Local).
-    *   Read `docs/DEVELOPMENT_ROADMAP.md` to locate the current position.
+    *   Read `docs/ROADMAP.md` and `docs/EXECUTION_PLAN.md` to locate the current position.
     *   Scan `skills/` to understand available technical capabilities and best practices to reference.
-    *   Analyze existing file structure in `src/` to ensure consistency.
+    *   Analyze existing file structure in `apps/` and `infra/` to ensure consistency.
 
 2.  **Analysis & Strategy**
     *   Identify the specific Roadmap Item to address.
@@ -93,7 +93,7 @@ class Entity(SQLModel):
 ## Anti-Patterns (What NOT to do)
 *   ❌ Writing `src/*.py` or `src/*.tsx` files (Only `docs/*.md`).
 *   ❌ Running `pip install`, `npm install`, or any shell command that modifies the system.
-*   ❌ Modifying `docker-compose.yml` directly.
+*   ❌ Modifying production infrastructure without a doc plan.
 *   ❌ Returning a plan without reading `AGENTS.md` first.
 
 ## Interaction Style

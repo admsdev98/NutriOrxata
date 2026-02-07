@@ -2,10 +2,16 @@
 
 This roadmap is a working document.
 
+For the sprint-by-sprint plan and branch naming, see `docs/EXECUTION_PLAN.md`.
+
 ## Phase 0 - Foundation (now)
 
 - Establish documentation and agent rules (AGENTS + docs).
 - Keep `v1-beta/` as reference while planning the next iteration.
+
+Also:
+
+- Build v1 in `apps/` and `infra/` (do not extend `v1-beta/`).
 
 ## Phase 1 - Core worker workflows
 
@@ -35,3 +41,7 @@ This roadmap is a working document.
 - Export/share: PDF weekly plan.
 - Integrations: Google Calendar for appointments (worker), wearable imports (later).
 - Offline-friendly caching for client app.
+
+Secondary:
+
+- Marketing site/blog can live separately from the app (SEO does not block MVP).
