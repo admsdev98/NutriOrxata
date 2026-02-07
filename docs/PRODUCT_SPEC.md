@@ -8,6 +8,12 @@ This document describes the core product sections, how they should work, and the
 - Auth (login/registration/password reset)
 - App (worker + client areas)
 
+Reference docs:
+
+- `docs/WORKFLOWS.md`
+- `docs/GLOSSARY.md`
+- `docs/FORMULAS_CALORIC_TARGETS.md`
+
 ## 2) Landing
 
 Objective:
@@ -28,12 +34,28 @@ Objective:
 - Workers and clients can log in.
 - Password recovery works.
 
+MVP access gate:
+
+- Worker cannot access the app until email is verified.
+- Trial starts at verification and lasts 30 days.
+- Trial expired: worker is read-only; clients cannot access.
+- Read-only always allows export and delete my data.
+
 Rules:
 
 - If a client is created by a worker, client onboarding must be simple.
 - Keep flows short and mobile-friendly.
 
+Reference:
+
+- `docs/AUTH_TRIAL_SUBSCRIPTION.md`
+
 ## 4) In-app (worker)
+
+Navigation rule:
+
+- The worker app optimizes for speed and density, but must remain calm.
+- Prefer a left navigation with predictable sections.
 
 ### 4.1 Dashboard
 
@@ -82,9 +104,20 @@ Required capabilities:
    - Assign to specific day(s) or whole week.
    - Edit dish ingredients per client when needed.
    - Support editing by final calories or by macro percentages (P/C/F).
-   - Optional: dish has a target kcal so it can auto-recalculate.
+   - Macro-optimized mode is a competitive advantage and is Phase 1.
+   - Ingredient-level lock/unlock is required to avoid breaking recipes.
 5) Assign exercise routines:
    - Pick from routine library.
+
+Recommended tabs (baseline):
+
+- Overview (alerts + next actions)
+- Profile (client info + status)
+- Nutrition (inputs + targets)
+- Menu (weekly plan)
+- Training (routine assignment)
+- Progress (charts + check-ins)
+- Messages
 
 UX rules:
 
@@ -101,13 +134,21 @@ Objective:
 Capabilities:
 
 - Text messages.
-- Attachments (files/links).
-- Temporary audio messages (ephemeral) if feasible.
+- Attachments: photos and PDF (MVP).
+- Temporary audio messages (ephemeral): yes (MVP).
 
 Rules:
 
 - Clear unread state.
 - Fast on mobile.
+- Explicit constraints for attachments (size/type) and retention.
+
+MVP constraints:
+
+- Photos: <= 5MB
+- PDF: <= 2MB
+- Audio duration: worker <= 120s, client <= 60s
+- Audio retention: TTL 7 days
 
 ### 4.5 Ingredients
 
@@ -119,6 +160,10 @@ Data rules:
 
 - Store per 100g: kcal + basic macros (protein/carbs/fat).
 
+Nice-to-have later:
+
+- Units and serving sizes (only if it does not increase friction).
+
 ### 4.6 Dishes
 
 Objective:
@@ -129,6 +174,7 @@ Rules:
 
 - A dish can be used for one or multiple meals.
 - Dishes should be easy to copy and adapt per client.
+- The product must clarify when edits affect the template vs only the current plan.
 
 ### 4.7 Routines
 
@@ -141,6 +187,11 @@ Rules:
 - Support progressions and notes.
 - For gym: weights/reps and history.
 - For running: time, distance, pace.
+
+Minimum logging UX:
+
+- Show last logged value per exercise/activity.
+- Logging must be possible in < 30 seconds on mobile.
 
 ### 4.8 Profile (settings)
 
@@ -164,15 +215,42 @@ Client should open the app and immediately see:
 - Training routine for the day/week and history logging.
 - Messaging with the worker.
 
+Client permissions (baseline):
+
+- Client can log what happened (meals/workouts/weight).
+- Client cannot modify the worker's templates.
+- Client adjustments to the plan (if allowed) must be explicit and visible to the worker.
+
+Tenant expired behavior:
+
+- Client cannot access while the worker tenant is expired.
+- Show a calm, non-aggressive message that explains why and suggests contacting the professional.
+
 Rules:
 
 - Mobile-first.
 - Keep it simple: do not expose worker-only complexity.
 
-## 6) Premium / Pro (future)
+## 6) Data export and deletion
+
+MVP guarantee:
+
+- Worker can export data as a ZIP.
+- Worker can delete their data (tenant purge).
+- Both are available even during read-only.
+
+Reference:
+
+- `docs/DATA_EXPORT_AND_DELETION.md`
+
+## 7) Premium / Pro (future)
 
 Candidate pro features:
 
 - AI-assisted generation of dishes/ingredients/routines (guardrailed).
 - Branding customization: client app typography/colors (basic theming).
 - Advanced analytics and charts.
+
+Also consider:
+
+- Worker-specific libraries sharing (opt-in) inside a tenant team (future).

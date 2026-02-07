@@ -10,4 +10,31 @@ This folder is the source of truth for product + engineering decisions.
 - `docs/ROADMAP.md`: phased roadmap and priorities.
 - `docs/SKILLS_CATALOG.md`: skills available in this repo and when to use them.
 
+Extended references:
+
+- `docs/GLOSSARY.md`: domain vocabulary used across product/engineering.
+- `docs/DOMAIN_MODEL.md`: entities, relationships, and multi-tenant scoping.
+- `docs/DATA_MODEL_V1.md`: database schema blueprint (tables, PK/FK, indexes).
+- `docs/WORKFLOWS.md`: key user workflows and acceptance criteria.
+- `docs/FORMULAS_CALORIC_TARGETS.md`: calorie target formulas and phase adjustments.
+- `docs/SECURITY_PRIVACY.md`: data sensitivity rules, retention, and access control.
+- `docs/VISUAL_LANGUAGE.md`: UI direction anchored to `v1-beta/`.
+- `docs/DEVELOPMENT_WORKFLOW.md`: branches, docs discipline, local dev commands.
+
+Execution and operations:
+
+- `docs/EXECUTION_PLAN.md`: epics + sprint plan + branch naming + Definition of Done.
+- `docs/APP_STRUCTURE.md`: target v1 repo layout (apps/infra/scripts).
+- `docs/AUTH_TRIAL_SUBSCRIPTION.md`: verify email, trial, read-only, manual unlock.
+- `docs/DATA_EXPORT_AND_DELETION.md`: export ZIP + tenant purge + backup retention.
+- `docs/DB_SECURITY_AND_INDEXING.md`: tenant isolation, indexing strategy, rate limits.
+- `docs/EMAIL_DELIVERY.md`: SendGrid setup and transactional templates.
+- `docs/DEPLOYMENT_OVH_VPS.md`: production deployment baseline (Compose/TLS/backups).
+- `docs/OPS_RUNBOOK.md`: operational procedures (deploy/backup/restore/security).
+- `docs/API_CONVENTIONS.md`: API patterns (errors, pagination, auth, uploads).
+- `docs/PERMISSIONS_MATRIX.md`: worker/client permissions + special states.
+- `docs/PRODUCT_COPY.md`: sensitive UI copy (blocked access, read-only, deletion).
+- `docs/DECISION_LOG.md`: locked decisions.
+- `docs/OPEN_QUESTIONS.md`: unresolved decisions.
+
 Note: the current MVP lives under `v1-beta/` and acts as a UI/UX baseline reference.

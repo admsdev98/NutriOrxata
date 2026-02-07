@@ -13,9 +13,17 @@ This repo tracks reusable agent skills under `skills/`.
 - `skills/docker/SKILL.md`: Docker/Compose workflows.
 - `skills/planning-orchestrator/SKILL.md`: RFCs, plans, data models (docs-only).
 - `skills/qa-test-planner/SKILL.md`: test plans, regression suites, bug reports.
-- `skills/ai-data/SKILL.md`: AI/RAG/data workflows.
 - `skills/postgresql-table-design/SKILL.md`: table design and Postgres modeling.
 - `skills/skill-generator/SKILL.md`: create new skills consistently.
+
+Tooling note:
+
+- Brainstorming helpers can be found under `.opencode/superpowers/commands/`.
+
+Workflow skills (optional):
+
+- Additional workflow-oriented skills live under `.opencode/superpowers/skills/` (TDD, debugging, writing plans).
+- They are reference/process docs; use them to guide how you work.
 
 ## How to choose
 

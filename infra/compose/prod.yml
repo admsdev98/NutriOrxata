@@ -1,0 +1,138 @@
+services:
+  reverse_proxy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?set PUBLIC_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?set LETSENCRYPT_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+    networks:
+      - public
+      - private
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nutriorxata}
+      POSTGRES_USER: ${POSTGRES_USER:-nutriorxata}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nutriorxata} -d ${POSTGRES_DB:-nutriorxata}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - private
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - private
+
+  minio_init:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      S3_BUCKET_MAIN: ${S3_BUCKET_MAIN:-nutriorxata}
+    command:
+      - |
+        mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$S3_BUCKET_MAIN"
+        mc anonymous set none "local/$S3_BUCKET_MAIN"
+        echo "minio init done"
+    networks:
+      - private
+
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+      target: prod
+    restart: unless-stopped
+    environment:
+      API_ENVIRONMENT: ${API_ENVIRONMENT:-production}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-nutriorxata}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nutriorxata}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-}
+      API_JWT_SECRET: ${API_JWT_SECRET:?set API_JWT_SECRET}
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      S3_BUCKET_MAIN: ${S3_BUCKET_MAIN:-nutriorxata}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?set SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:?set SENDGRID_FROM_EMAIL}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - private
+
+  jobs:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+      target: prod
+    restart: unless-stopped
+    environment:
+      API_ENVIRONMENT: ${API_ENVIRONMENT:-production}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-nutriorxata}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nutriorxata}
+      API_JWT_SECRET: ${API_JWT_SECRET:?set API_JWT_SECRET}
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      S3_BUCKET_MAIN: ${S3_BUCKET_MAIN:-nutriorxata}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?set SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:?set SENDGRID_FROM_EMAIL}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    command: python -m app.jobs
+    networks:
+      - private
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    networks:
+      - private
+
+networks:
+  public:
+  private:
+
+volumes:
+  postgres_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

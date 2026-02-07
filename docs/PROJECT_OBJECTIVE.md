@@ -60,3 +60,8 @@ It replaces per-client spreadsheets with a single app that centralizes data and 
 - Low-click, low-scroll.
 - Light/dark modes.
 - Keep UX calm: no unnecessary widgets.
+
+Trust constraints:
+
+- Data export and deletion must be available to the worker at all times.
+- Access gates (verification/trial) must be explained calmly.

@@ -41,6 +41,12 @@ These rules exist to avoid the classic "dashboard syndrome" and spreadsheet-like
   - Why is it empty?
   - What is the next action?
 
+## 6.1) Trust states (trial, blocked access, deletion)
+
+- If access is blocked (trial expired, tenant inactive), the copy must be calm and non-aggressive.
+- Always provide a clear next step (contact professional, export data, delete data).
+- Never use manipulative countdown pressure in UI.
+
 ## 7) Light/dark mode
 
 - Both modes are first-class.

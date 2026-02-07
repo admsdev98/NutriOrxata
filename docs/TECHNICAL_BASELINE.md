@@ -1,23 +1,32 @@
 # Technical Baseline
 
-This is the current engineering direction. It will evolve as we move beyond `v1-beta/`.
+This is the engineering direction for v1.
 
 ## 1) Stack
 
 - Backend: Python + FastAPI
 - DB: PostgreSQL
-- Frontend: React
+- Frontend: React (SPA)
+- Web tooling: Vite + Tailwind + TypeScript
 - Containers: Docker / Compose
+- Storage: S3-compatible object storage (MinIO)
+- Email: SendGrid (transactional)
 - Automation: n8n
 - AI (future/pro): model integrations for assistant workflows
 
 ## 2) Current state in repo
 
 - The existing MVP is under `v1-beta/`.
-- Treat it as:
-  - UX/UI reference
-  - Working baseline
-  - Source of reusable patterns
+- Treat it as UX/UI reference only.
+
+Target v1 structure:
+
+- `apps/api/`
+- `apps/web/`
+- `infra/`
+- `scripts/`
+
+See `docs/APP_STRUCTURE.md`.
 
 ## 3) Main data domains (conceptual)
 
@@ -56,8 +65,19 @@ This is the current engineering direction. It will evolve as we move beyond `v1-
   - FAQ bot
   - Basic automations (support, reminders)
 
+- Object storage:
+  - MinIO for local/prod baseline
+
+- Email:
+  - SendGrid for verification, reset password, and client invites
+
 ## 5) Security / privacy
 
 - Treat all client data as sensitive.
 - Avoid storing more than needed.
 - Never commit secrets.
+
+Operational constraints:
+
+- Production runs on an OVH VPS via Docker Compose.
+- Backups are encrypted with 30-day retention.
