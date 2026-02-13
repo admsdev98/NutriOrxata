@@ -1,9 +1,11 @@
-import { Link, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
-import HealthPage from "./pages/HealthPage";
-import HomePage from "./pages/HomePage";
+type Props = {
+  children: ReactNode;
+};
 
-export default function App() {
+export default function AppShell({ children }: Props) {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
       <header className="border-b border-neutral-800">
@@ -19,12 +21,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/health" element={<HealthPage />} />
-        </Routes>
-      </main>
+      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
     </div>
   );
 }

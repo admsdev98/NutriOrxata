@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-type Health = { status: string };
+import { getHealth } from "../api/getHealth";
+import type { Health } from "../../../shared/types/health";
 
 export default function HealthPage() {
   const [data, setData] = useState<Health | null>(null);
@@ -11,10 +12,8 @@ export default function HealthPage() {
 
     (async () => {
       try {
-        const res = await fetch("/api/health");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as Health;
-        if (!cancelled) setData(json);
+        const health = await getHealth();
+        if (!cancelled) setData(health);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       }
