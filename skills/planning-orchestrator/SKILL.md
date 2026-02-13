@@ -21,7 +21,7 @@ This skill is designed to bridge the gap between high-level roadmap goals and co
 
 1.  **Context Reconnaissance (Read-Only)**
     *   Read `AGENTS.md` (Global & Local).
-    *   Read `docs/ROADMAP.md` and `docs/EXECUTION_PLAN.md` to locate the current position.
+    *   Read `docs/PLANS.md` and `docs/exec-plans/active/` to locate the current position.
     *   Scan `skills/` to understand available technical capabilities and best practices to reference.
     *   Analyze existing file structure in `apps/` and `infra/` to ensure consistency.
 

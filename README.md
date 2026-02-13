@@ -1,13 +1,38 @@
 # NutriOrxata
 
-El MVP actual esta encapsulado en `v1-beta/`.
+NutriOrxata is a multi-tenant planning platform for nutritionists/trainers (worker app) and clients (client app).
 
-- Desarrollo local (docker): `docker compose -f v1-beta/docker-compose.yml up --build`
-- Produccion (docker): `docker compose -f v1-beta/docker-compose.prod.yml up --build -d`
+## v1 Runtime
 
-Si ejecutas los comandos desde la raiz del repo y quieres evitar dudas con rutas relativas:
-- `docker compose -f v1-beta/docker-compose.yml --project-directory v1-beta up --build`
-- `docker compose -f v1-beta/docker-compose.prod.yml --project-directory v1-beta up --build -d`
+The active v1 codebase lives in:
 
-Notas:
-- `.opencode/`, `.gemini/` y `skills/` se mantienen en la raiz del repo.
+- `apps/api`
+- `apps/web`
+- `infra/compose`
+
+Run local development:
+
+```bash
+docker compose -p nutriorxata-v1 -f infra/compose/dev.yml up --build
+```
+
+Run production-like stack:
+
+```bash
+docker compose -p nutriorxata -f infra/compose/prod.yml --env-file infra/compose/.env up --build -d
+```
+
+## Documentation Entry Points
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `docs/README.md`
+- `docs/PLANS.md`
+
+## Legacy
+
+`v1-beta/` remains as legacy reference only.
+
+## Tooling Directories
+
+Keep `.opencode/`, `.gemini/`, and `skills/` in repository root.

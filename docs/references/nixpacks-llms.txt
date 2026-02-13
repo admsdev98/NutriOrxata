@@ -1,0 +1,6 @@
+Nixpacks reference notes for agents.
+
+- Keep build/runtime assumptions explicit and deterministic.
+- Avoid hidden side effects in startup commands.
+- Pin toolchain versions where possible.
+- Separate build-time and run-time environment variables.

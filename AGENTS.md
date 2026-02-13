@@ -1,130 +1,95 @@
-# NutriOrxata (temporary name) - Agent Guide
+# NutriOrxata Agent Guide
 
-This file is the entry point for any coding agent (OpenAI / Claude / Gemini / local models).
-Goal: keep work consistent, fast, and aligned with product constraints.
+This file is the entry point for coding agents working in this repository.
+Treat it as a map, not an encyclopedia.
 
-## 0) Quick start (before you do anything)
+## 0) 60-Second Startup
 
-1) Read `docs/README.md` (documentation index).
-2) Treat `v1-beta/` as the UX/UI baseline reference for v1 (temporary; will be removed once v1 reaches parity).
-3) Check the current branch and working tree (this repo uses `main` as default branch).
-4) If a change affects behavior, update the relevant `docs/*.md` in the same change.
+1) Read `docs/README.md`.
+2) Read `ARCHITECTURE.md`.
+3) Read `docs/PLANS.md` and `docs/exec-plans/active/`.
+4) Check git branch and working tree.
+5) If behavior changes, update canonical docs in the same change.
 
-Also:
+Keep `skills/`, `.opencode/`, and `.gemini/` in the repository.
 
-- Keep `skills/`, `.opencode/`, and `.gemini/` available in the repo (they are part of the agent/tooling setup).
+## 1) Product Scope
 
-## 1) What is this project?
+NutriOrxata is a client planning platform for nutritionists and trainers.
 
-NutriOrxata is a client-management and planning platform for early-stage nutritionists and/or personal trainers with low budget.
-It replaces per-client spreadsheets with a single app:
+- Worker app: client management, reusable libraries, weekly planning, messaging.
+- Client app: follow plan, log activity and progress, communicate.
 
-- Professional (worker) app: manage clients, build reusable libraries (ingredients, dishes, routines), plan weeks, and communicate.
-- Client app: follow the plan, log progress, and communicate.
+## 2) Non-Negotiable Product Rules
 
-We do not reinvent the wheel. We package common workflows into a simple, modern, mobile-first product.
+- Mobile-first always.
+- Common actions in 2-3 clicks.
+- Avoid heavy scroll on worker surfaces.
+- Calm UI over noisy dashboards.
+- Light and dark mode support.
 
-## 2) Product principles (non-negotiable)
+## 3) Role and Data Boundaries
 
-- Mobile-first ALWAYS (clients are mostly on phone).
-- Professionals work mainly on laptop/tablet, but mobile-first still applies.
-- 2-3 clicks max to reach a common action.
-- Avoid scroll, especially for professional workflows. Prefer dense, well-structured layouts.
-- Avoid UI noise: no dashboards full of irrelevant metrics. Show only what helps decide the next action.
-- Light + dark mode.
+- Worker: tenant owner.
+- Client: end user under exactly one worker tenant.
+- Admin: future scope only.
 
-## 3) Roles and boundaries
+Core invariant: all domain data is tenant-scoped unless explicitly documented otherwise.
 
-- Worker: nutritionist/trainer who manages clients and creates reusable content.
-- Client: end user invited/created by a worker.
-- Admin (future): platform owner controls billing, templates, branding, moderation.
-
-Core boundary rule:
-
-- Every worker is a "tenant". Client data and libraries must be scoped to the worker (unless we explicitly introduce shared/global catalogs).
-
-## 4) Repo layout (current)
-
-- `v1-beta/`: current functional MVP (legacy reference / baseline UI patterns).
-- `skills/`: skill library used by agents in this repo.
-- `docs/`: product + engineering documentation (source of truth).
-
-Target v1 structure (to be implemented; `v1-beta/` will be deleted later):
+## 4) Repository Layout
 
 - `apps/api/`: FastAPI backend.
 - `apps/web/`: React SPA (Vite + Tailwind + TypeScript).
-- `infra/`: VPS/OVH deployment assets (Compose, reverse proxy, backups).
-- `scripts/`: operational scripts (backup/restore/purge/smoke).
+- `infra/`: Compose and deployment assets.
+- `docs/`: source of truth.
+- `v1-beta/`: legacy MVP reference, not active implementation target.
 
-When implementing new work, keep `v1-beta/` as reference for desired visual language and UX constraints.
+## 5) Architecture Entry Points
 
-## 5) Tech stack (target)
+- `ARCHITECTURE.md`: domain and layer boundaries.
+- `docs/DESIGN.md`: UX principles and product beliefs.
+- `docs/FRONTEND.md`: frontend architecture and constraints.
+- `docs/SECURITY.md`: security and data lifecycle controls.
+- `docs/RELIABILITY.md`: ops and resilience baseline.
 
-- Backend: Python + FastAPI
-- Frontend: React
-- Database: PostgreSQL
-- Infra: Docker / Docker Compose
-- Automation: n8n (FAQ bot, basic automations)
-- AI: used selectively for pro features (content generation, assistant workflows)
+## 6) Tooling and Skill Routing
 
-## 6) Local development (v1-beta)
+Use repository skills before implementation.
 
-- Dev: `docker compose -f v1-beta/docker-compose.yml up --build`
-- Prod-like: `docker compose -f v1-beta/docker-compose.prod.yml up --build -d`
+- Backend/API/data model: `skills/backend` + `skills/postgresql-table-design`.
+- Frontend/UI: `skills/frontend` + `skills/react-best-practices`.
+- UI design quality: `skills/frontend-design` or `skills/web-design-guidelines`.
+- Infra/deployment: `skills/devops` + `skills/docker`.
+- Planning and roadmap decomposition: `skills/planning-orchestrator`.
+- QA strategy: `skills/qa-test-planner`.
 
-If running from repo root and you want to avoid relative path confusion:
+## 7) Documentation Contract
 
-- `docker compose -f v1-beta/docker-compose.yml --project-directory v1-beta up --build`
-- `docker compose -f v1-beta/docker-compose.prod.yml --project-directory v1-beta up --build -d`
+- Canonical documentation is in English.
+- Human summary in Spanish is allowed only in `docs/HUMAN_OVERVIEW.es.md`.
+- One topic must have one canonical file.
+- Do not keep parallel conflicting docs.
+- Update docs and code together in the same change.
 
-## 7) Engineering rules
+## 8) Engineering Invariants
 
-- Do not commit secrets: `.env`, credentials, API keys.
-- Prefer small, incremental PRs/commits with clear intent.
-- Keep naming consistent across backend and frontend (same entity names).
-- Prefer explicit schemas and validation over implicit magic.
-- Keep performance in mind on mobile (payloads, list rendering, charts).
-- Indexes and security are first-class: tenant isolation, authz checks, and query indexing are part of the Definition of Done.
+- No secrets in git (`.env`, credentials, keys).
+- Enforce authorization and tenant isolation server-side.
+- Include migration and index review for schema changes.
+- Keep modules cohesive and functions focused.
+- Eliminate redundant implementations when introducing a canonical path.
 
-Data safety (treat as sensitive by default):
+## 9) Sprint Workflow
 
-- Minimize collection: store only what we need to deliver the workflow.
-- Prefer explicit retention choices for attachments/audio.
-- Never auto-message clients without worker opt-in.
+- Branch naming: `sprint/NN-short-slug` from `main`.
+- Keep PRs focused and reversible.
+- Required DoD:
+  - docs updated
+  - authz + tenant checks verified
+  - migration/index review completed when needed
+  - smoke verification run
 
-## 8) UX implementation rules
+## 10) Legacy Reference Policy
 
-- Prefer single-page flows with panels/tabs over many nested pages.
-- Prefer inline editing and contextual drawers over modal chains.
-- Empty states must be helpful (what to do next + 1 primary action).
-- Always design for offline-ish behavior: loading, retry, stale views.
-- Workers: dense UI is OK, but must stay calm and readable.
-
-## 9) Skills available in this repo
-
-See `docs/SKILLS_CATALOG.md`.
-
-Quick guidance:
-
-- Backend design / FastAPI: use `skills/backend`.
-- Frontend (React): use `skills/frontend` and `skills/react-best-practices`.
-- UI audits: use `skills/web-design-guidelines`.
-- Production-ready UI building: use `skills/frontend-design`.
-- DevOps / Docker: use `skills/devops` and `skills/docker`.
-- Planning / RFCs / data models: use `skills/planning-orchestrator`.
-- QA planning: use `skills/qa-test-planner`.
-
-## 10) Documentation discipline
-
-- If you change behavior, update `docs/` in the same change.
-- If you add a new domain concept, update `docs/PRODUCT_SPEC.md` and `docs/TECHNICAL_BASELINE.md`.
-- Prefer adding new docs over bloating a single file when a topic becomes "its own surface" (e.g. security/privacy, formulas).
-
-## 11) Sprint workflow (mandatory)
-
-- Work happens in sprint branches: `sprint/NN-short-slug` (branched from `main`).
-- Every sprint must include:
-  - updated/added specs in `docs/`
-  - DB migrations and index review for any DB changes
-  - server-side authorization and tenant isolation checks
-  - a focused PR back to `main`
+`v1-beta/` is a visual and workflow reference only.
+Do not implement new v1 behavior there.

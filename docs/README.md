@@ -1,40 +1,37 @@
-# docs/ - Documentation Index
+# Documentation Index
 
-This folder is the source of truth for product + engineering decisions.
+Canonical documentation is in English.
 
-- `docs/PROJECT_OBJECTIVE.md`: vision, target users, non-goals, success metrics.
-- `docs/PRODUCT_SPEC.md`: sections/screens, workflows, permissions, constraints.
-- `docs/UX_UI_GUIDELINES.md`: mobile-first rules, interaction patterns, style constraints.
-- `docs/TECHNICAL_BASELINE.md`: stack, architecture direction, data domains, integrations.
-- `docs/AI_AUTOMATION.md`: AI features (pro), n8n FAQ bot, guardrails.
-- `docs/ROADMAP.md`: phased roadmap and priorities.
-- `docs/SKILLS_CATALOG.md`: skills available in this repo and when to use them.
+Spanish is allowed only for a human summary at `docs/HUMAN_OVERVIEW.es.md`.
 
-Extended references:
+## Core Entry Points
 
-- `docs/GLOSSARY.md`: domain vocabulary used across product/engineering.
-- `docs/DOMAIN_MODEL.md`: entities, relationships, and multi-tenant scoping.
-- `docs/DATA_MODEL_V1.md`: database schema blueprint (tables, PK/FK, indexes).
-- `docs/WORKFLOWS.md`: key user workflows and acceptance criteria.
-- `docs/FORMULAS_CALORIC_TARGETS.md`: calorie target formulas and phase adjustments.
-- `docs/SECURITY_PRIVACY.md`: data sensitivity rules, retention, and access control.
-- `docs/VISUAL_LANGUAGE.md`: UI direction anchored to `v1-beta/`.
-- `docs/DEVELOPMENT_WORKFLOW.md`: branches, docs discipline, local dev commands.
+- `docs/PLANS.md`: sprint model, execution queue, and roadmap decomposition.
+- `docs/PRODUCT_SENSE.md`: product objective, user outcomes, and non-goals.
+- `docs/DESIGN.md`: UX beliefs and interaction principles.
+- `docs/FRONTEND.md`: frontend architecture and implementation constraints.
+- `docs/SECURITY.md`: security model, isolation rules, and data lifecycle controls.
+- `docs/RELIABILITY.md`: operational reliability baseline and run posture.
+- `docs/QUALITY_SCORE.md`: quality rubric by domain/layer.
+- `docs/SKILLS_CATALOG.md`: available repository skills and routing.
 
-Execution and operations:
+## Structured Knowledge Base
 
-- `docs/EXECUTION_PLAN.md`: epics + sprint plan + branch naming + Definition of Done.
-- `docs/APP_STRUCTURE.md`: target v1 repo layout (apps/infra/scripts).
-- `docs/AUTH_TRIAL_SUBSCRIPTION.md`: verify email, trial, read-only, manual unlock.
-- `docs/DATA_EXPORT_AND_DELETION.md`: export ZIP + tenant purge + backup retention.
-- `docs/DB_SECURITY_AND_INDEXING.md`: tenant isolation, indexing strategy, rate limits.
-- `docs/EMAIL_DELIVERY.md`: SendGrid setup and transactional templates.
-- `docs/DEPLOYMENT_OVH_VPS.md`: production deployment baseline (Compose/TLS/backups).
-- `docs/OPS_RUNBOOK.md`: operational procedures (deploy/backup/restore/security).
-- `docs/API_CONVENTIONS.md`: API patterns (errors, pagination, auth, uploads).
-- `docs/PERMISSIONS_MATRIX.md`: worker/client permissions + special states.
-- `docs/PRODUCT_COPY.md`: sensitive UI copy (blocked access, read-only, deletion).
-- `docs/DECISION_LOG.md`: locked decisions.
-- `docs/OPEN_QUESTIONS.md`: unresolved decisions.
+- `docs/design-docs/index.md`
+  - `docs/design-docs/core-beliefs.md`
+  - `docs/design-docs/agent-operating-model.md`
+- `docs/product-specs/index.md`
+  - `docs/product-specs/new-user-onboarding.md`
+  - `docs/product-specs/worker-workspace.md`
+  - `docs/product-specs/client-experience.md`
+- `docs/exec-plans/active/index.md`
+- `docs/exec-plans/completed/index.md`
+- `docs/exec-plans/tech-debt-tracker.md`
+- `docs/generated/db-schema.md`
+- `docs/references/`
 
-Note: the current MVP lives under `v1-beta/` and acts as a UI/UX baseline reference.
+## Documentation Contract
+
+- One topic has one canonical file.
+- No parallel conflicting docs.
+- Docs must be updated in the same change when behavior changes.
