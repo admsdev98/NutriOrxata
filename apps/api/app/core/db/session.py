@@ -5,7 +5,7 @@ from functools import lru_cache
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from app.settings import settings
+from app.core.config import settings
 
 
 def get_sqlalchemy_url() -> str:

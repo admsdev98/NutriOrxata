@@ -1,33 +1,13 @@
 from __future__ import annotations
 
-import enum
 import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-class Base(DeclarativeBase):
-    pass
-
-
-class TenantStatus(str, enum.Enum):
-    active = "active"
-    expired = "expired"
-    disabled = "disabled"
-    deleted = "deleted"
-
-
-class SubscriptionStatus(str, enum.Enum):
-    trial = "trial"
-    active = "active"
-    expired = "expired"
-
-
-class UserRole(str, enum.Enum):
-    worker = "worker"
-    client = "client"
+from app.core.db.base import Base
+from app.modules.auth.domain.enums import SubscriptionStatus, TenantStatus
 
 
 class Tenant(Base):

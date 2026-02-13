@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import httpx
 
-from app.settings import settings
+from app.core.config import settings
 
 
 def send_email(*, to_email: str, subject: str, html: str) -> None:

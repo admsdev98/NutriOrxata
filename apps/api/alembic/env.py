@@ -11,8 +11,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.db import get_sqlalchemy_url
-from app.models import Base
+from app.core.db.session import get_sqlalchemy_url
+from app.core.db.base import Base
+from app.modules.auth.domain import models as auth_models  # noqa: F401
 
 
 config = context.config

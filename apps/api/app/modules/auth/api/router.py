@@ -1,38 +1,23 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.auth.schemas import LoginIn, LoginOut, MeOut, RegisterWorkerIn, RegisterWorkerOut, VerifyEmailIn
-from app.auth.security import create_access_token, hash_password, verify_password
-from app.auth.sendgrid_client import send_email
-from app.auth.tokens import new_token_urlsafe, token_hash_bytes
-from app.deps import CurrentUser, DbSession
-from app.models import EmailVerificationToken, SubscriptionStatus, Tenant, TenantStatus, User, UserRole
-from app.settings import settings
+from app.core.config import settings
+from app.core.dependencies.auth import CurrentUser, DbSession
+from app.modules.auth.api.schemas import LoginIn, LoginOut, MeOut, RegisterWorkerIn, RegisterWorkerOut, VerifyEmailIn
+from app.modules.auth.domain import EmailVerificationToken, SubscriptionStatus, Tenant, TenantStatus, User, UserRole
+from app.modules.auth.infrastructure.sendgrid_client import send_email
+from app.modules.auth.security.jwt_tokens import create_access_token
+from app.modules.auth.security.passwords import hash_password, verify_password
+from app.modules.auth.security.verification_tokens import new_token_urlsafe, token_hash_bytes
+from app.modules.auth.service.access_mode import now_utc, tenant_access_mode
 
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _tenant_access_mode(tenant: Tenant) -> str:
-    if tenant.status != TenantStatus.active.value:
-        return "blocked"
-
-    if tenant.subscription_status == SubscriptionStatus.active.value:
-        return "active"
-
-    if tenant.trial_ends_at and _now() >= tenant.trial_ends_at:
-        return "expired"
-
-    return "trial"
 
 
 @router.post("/register", response_model=RegisterWorkerOut)
@@ -65,7 +50,7 @@ def register_worker(payload: RegisterWorkerIn, session: DbSession) -> RegisterWo
         tenant_id=tenant.id,
         user_id=user.id,
         token_hash=token_hash_bytes(raw_token),
-        expires_at=_now() + timedelta(hours=48),
+        expires_at=now_utc() + timedelta(hours=48),
     )
     session.add(token)
     session.commit()
@@ -92,20 +77,20 @@ def verify_email(payload: VerifyEmailIn, session: DbSession) -> dict[str, str]:
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=400, detail="invalid_token")
-    if _now() > row.expires_at:
+    if now_utc() > row.expires_at:
         raise HTTPException(status_code=400, detail="token_expired")
 
     user = session.execute(select(User).where(User.id == row.user_id)).scalar_one()
     if user.email_verified_at is None:
-        user.email_verified_at = _now()
+        user.email_verified_at = now_utc()
 
     tenant = session.execute(select(Tenant).where(Tenant.id == row.tenant_id)).scalar_one()
     if tenant.trial_starts_at is None:
-        tenant.trial_starts_at = _now()
-        tenant.trial_ends_at = _now() + timedelta(days=30)
+        tenant.trial_starts_at = now_utc()
+        tenant.trial_ends_at = now_utc() + timedelta(days=30)
         tenant.subscription_status = SubscriptionStatus.trial.value
 
-    row.consumed_at = _now()
+    row.consumed_at = now_utc()
     session.commit()
     return {"status": "ok"}
 
@@ -131,7 +116,7 @@ def login(payload: LoginIn, session: DbSession) -> LoginOut:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
     tenant = session.execute(select(Tenant).where(Tenant.id == user.tenant_id)).scalar_one()
-    mode = _tenant_access_mode(tenant)
+    mode = tenant_access_mode(tenant)
 
     if user.role == UserRole.worker.value:
         if user.email_verified_at is None:
@@ -158,7 +143,7 @@ def login(payload: LoginIn, session: DbSession) -> LoginOut:
 @router.get("/me", response_model=MeOut)
 def me(user: CurrentUser, session: DbSession) -> MeOut:
     tenant = session.execute(select(Tenant).where(Tenant.id == user.tenant_id)).scalar_one()
-    mode = _tenant_access_mode(tenant)
+    mode = tenant_access_mode(tenant)
     access_mode = "active"
     if user.role == UserRole.worker.value and mode == "expired":
         access_mode = "read_only"

@@ -7,9 +7,9 @@ from fastapi import Depends, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.security import decode_access_token
-from app.db import get_session
-from app.models import User
+from app.core.db.session import get_session
+from app.modules.auth.domain.models import User
+from app.modules.auth.security.jwt_tokens import decode_access_token
 
 
 def db_session():
