@@ -59,3 +59,23 @@ def current_user(
 
 
 CurrentUser = Annotated[User, Depends(current_user)]
+
+
+def require_write_access(
+    authorization: Annotated[str | None, Header()] = None,
+) -> bool:
+    token = _bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="missing_token")
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="invalid_token")
+
+    if payload.get("access_mode") == "read_only":
+        raise HTTPException(status_code=403, detail="read_only")
+
+    return True
+
+
+WriteAccess = Annotated[bool, Depends(require_write_access)]
