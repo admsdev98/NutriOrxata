@@ -36,7 +36,3 @@ docker compose -p nutriorxata -f infra/compose/prod.yml --env-file infra/compose
 ## Tooling Directories
 
 Keep `skills/` canonical in repository root.
-
-Keep `.opencode/` as a lightweight symlink shim to canonical project docs/skills.
-
-Run `./scripts/setup-tooling-shims.sh` to recreate the expected shim layout.

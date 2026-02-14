@@ -39,17 +39,17 @@
 
 ### S03 - Worker Workspace Shell
 
-1. [ ] Build worker shell route skeleton and navigation.
-2. [ ] Add client list and workspace shell tabs.
-3. [ ] Add loading/error/empty baseline for worker flows.
-4. [ ] Verify <=3-click common paths.
+1. [x] Build worker shell route skeleton and navigation.
+2. [x] Add client list and workspace shell tabs.
+3. [x] Add loading/error/empty baseline for worker flows.
+4. [x] Verify <=3-click common paths.
 
 ### S04 - Nutrition Inputs and Targets
 
-1. [ ] Define nutrition profile schema and API contracts.
-2. [ ] Implement target calculators and overrides.
-3. [ ] Add daily and weekly target outputs.
-4. [ ] Add formula-level unit tests.
+1. [x] Define nutrition profile schema and API contracts.
+2. [x] Implement target calculators and overrides.
+3. [x] Add daily and weekly target outputs.
+4. [x] Add formula-level unit tests.
 
 ### S05 - Food Library and Dish Templates
 
