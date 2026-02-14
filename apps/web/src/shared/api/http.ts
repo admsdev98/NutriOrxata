@@ -46,3 +46,30 @@ export async function apiPut<T>(path: string, token: string, payload: unknown): 
   }
   return (await response.json()) as T;
 }
+
+export async function apiPost<T>(path: string, token: string, payload: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as T;
+}
+
+export async function apiDelete(path: string, token: string): Promise<void> {
+  const response = await fetch(path, {
+    method: "DELETE",
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+}

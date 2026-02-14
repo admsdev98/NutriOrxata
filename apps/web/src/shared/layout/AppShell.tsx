@@ -1,11 +1,18 @@
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 type Props = {
   children: ReactNode;
 };
 
 export default function AppShell({ children }: Props) {
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  const isLibrary = pathname.startsWith("/worker/library");
+  const isWorker = pathname.startsWith("/worker") && !isLibrary;
+  const isHealth = pathname.startsWith("/health");
+
   function navItemClassName(isActive: boolean): string {
     if (isActive) {
       return "text-white";
@@ -21,12 +28,15 @@ export default function AppShell({ children }: Props) {
             NutriOrxata
           </Link>
           <nav className="flex items-center gap-4 text-sm">
-            <NavLink className={({ isActive }) => navItemClassName(isActive)} to="/worker">
+            <Link className={navItemClassName(isWorker)} to="/worker">
               Worker
-            </NavLink>
-            <NavLink className={({ isActive }) => navItemClassName(isActive)} to="/health">
+            </Link>
+            <Link className={navItemClassName(isLibrary)} to="/worker/library/food">
+              Library
+            </Link>
+            <Link className={navItemClassName(isHealth)} to="/health">
               Health
-            </NavLink>
+            </Link>
           </nav>
         </div>
       </header>
