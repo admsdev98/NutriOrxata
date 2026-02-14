@@ -1,11 +1,18 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 type Props = {
   children: ReactNode;
 };
 
 export default function AppShell({ children }: Props) {
+  function navItemClassName(isActive: boolean): string {
+    if (isActive) {
+      return "text-white";
+    }
+    return "text-neutral-300 hover:text-white";
+  }
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
       <header className="border-b border-neutral-800">
@@ -13,10 +20,13 @@ export default function AppShell({ children }: Props) {
           <Link to="/" className="text-sm font-semibold tracking-wide">
             NutriOrxata
           </Link>
-          <nav className="flex items-center gap-4 text-sm text-neutral-300">
-            <Link className="hover:text-white" to="/health">
+          <nav className="flex items-center gap-4 text-sm">
+            <NavLink className={({ isActive }) => navItemClassName(isActive)} to="/worker">
+              Worker
+            </NavLink>
+            <NavLink className={({ isActive }) => navItemClassName(isActive)} to="/health">
               Health
-            </Link>
+            </NavLink>
           </nav>
         </div>
       </header>
