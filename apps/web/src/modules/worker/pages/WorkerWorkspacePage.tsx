@@ -12,6 +12,12 @@ import {
 import { getWorkerClients, type WorkerClientsScenario } from "../api/getWorkerClients";
 import type { WorkerClient } from "../data/mockClients";
 import { apiGet, apiPut, parseApiError, type ApiError } from "../../../shared/api/http";
+import {
+  clearAuthSession,
+  loadAuthSession,
+  saveAuthSession,
+  type AuthSession,
+} from "../../../shared/auth/workerSession";
 
 type ClientsState =
   | { status: "loading" }
@@ -25,13 +31,6 @@ type WorkerTab = {
 };
 
 type WorkerAccessMode = "active" | "read_only" | "blocked";
-type ApiAccessMode = "active" | "read_only";
-
-type AuthSession = {
-  token: string;
-  accessMode: ApiAccessMode;
-  email: string;
-};
 
 const WORKER_TABS: WorkerTab[] = [
   {
@@ -60,8 +59,6 @@ const WORKER_TABS: WorkerTab[] = [
     description: "Adherence and outcome follow-up.",
   },
 ];
-
-const AUTH_STORAGE_KEY = "worker-auth-session";
 
 function readScenario(searchParams: URLSearchParams): WorkerClientsScenario {
   const demoParam = searchParams.get("demo");
@@ -216,21 +213,12 @@ export default function WorkerWorkspacePage() {
     if (typeof window === "undefined") {
       return;
     }
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) {
+    const session = loadAuthSession();
+    if (!session) {
       return;
     }
-    try {
-      const parsed = JSON.parse(raw) as AuthSession;
-      if (parsed.token && (parsed.accessMode === "active" || parsed.accessMode === "read_only")) {
-        setAuthSession(parsed);
-        if (parsed.email) {
-          setAuthEmail(parsed.email);
-        }
-      }
-    } catch {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
+    setAuthSession(session);
+    setAuthEmail(session.email);
   }, []);
 
   useEffect(() => {
@@ -238,10 +226,10 @@ export default function WorkerWorkspacePage() {
       return;
     }
     if (!authSession) {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      clearAuthSession();
       return;
     }
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSession));
+    saveAuthSession(authSession);
   }, [authSession]);
 
   async function loadProfile(token: string): Promise<void> {
@@ -319,7 +307,7 @@ export default function WorkerWorkspacePage() {
         throw await parseApiError(response);
       }
 
-      const payload = (await response.json()) as { access_token: string; access_mode: ApiAccessMode };
+      const payload = (await response.json()) as { access_token: string; access_mode: "active" | "read_only" };
       const nextSession: AuthSession = {
         token: payload.access_token,
         accessMode: payload.access_mode,
@@ -338,6 +326,7 @@ export default function WorkerWorkspacePage() {
 
   function handleLogout() {
     setAuthSession(null);
+    clearAuthSession();
     setAuthMessage("Session cleared.");
     setProfileStatus("idle");
     setProfileMessage(null);
