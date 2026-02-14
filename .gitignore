@@ -30,3 +30,6 @@ Thumbs.db
 
 # `.gemini/` is local-only and should not be committed.
 .gemini/
+
+# `.codex/` is local-only (editor/cli tooling).
+.codex/

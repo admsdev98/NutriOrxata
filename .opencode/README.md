@@ -11,5 +11,5 @@ It only provides symlinks to canonical project sources:
 Recreate this layout anytime with:
 
 ```bash
-./scripts/setup-tooling-shims.sh
+./scripts/setup-tooling-shims.sh --tool opencode
 ```
