@@ -12,6 +12,8 @@ This rubric tracks quality posture by domain and layer.
 
 ## Current Snapshot
 
+Last updated: 2026-02-14
+
 - Documentation architecture: 3
 - Backend modular boundaries: 3
 - Frontend modular boundaries: 3
