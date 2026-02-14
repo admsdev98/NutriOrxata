@@ -23,7 +23,10 @@ Thumbs.db
 
 # Local AI/CLI tooling
 
-# Keep `.opencode/` and `.gemini/` in-repo (agents need them).
+# Keep `.opencode/` as a lightweight shim in-repo.
 # But never commit dependency folders or embedded git metadata.
 .opencode/node_modules/
 .opencode/**/.git/
+
+# `.gemini/` is local-only and should not be committed.
+.gemini/

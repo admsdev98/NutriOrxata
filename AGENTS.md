@@ -11,7 +11,7 @@ Treat it as a map, not an encyclopedia.
 4) Check git branch and working tree.
 5) If behavior changes, update canonical docs in the same change.
 
-Keep `skills/`, `.opencode/`, and `.gemini/` in the repository.
+Keep `skills/` and a lightweight `.opencode/` shim in the repository.
 
 ## 1) Product Scope
 
