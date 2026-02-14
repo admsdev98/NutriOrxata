@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
 from app.core.db.session import get_sqlalchemy_url
 from app.core.db.base import Base
 from app.modules.auth.domain import models as auth_models  # noqa: F401
+from app.modules.nutrition.domain import models as nutrition_models  # noqa: F401
 
 
 config = context.config

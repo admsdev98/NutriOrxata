@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.core.web.cors import register_cors
 from app.core.web.health import router as health_router
 from app.modules.auth.api import router as auth_router
+from app.modules.nutrition.api import router as nutrition_router
 
 
 def create_app() -> FastAPI:
@@ -13,5 +14,6 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(nutrition_router)
 
     return app
