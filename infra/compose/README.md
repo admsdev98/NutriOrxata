@@ -18,10 +18,21 @@ docker compose -p nutriorxata-v1 -f infra/compose/dev.yml down -v
 
 Services:
 
-- Postgres on `localhost:5433`
-- MinIO on `localhost:9100` (API) and `localhost:9101` (console)
-- API on `localhost:8010`
-- Web on `localhost:5173`
+- Postgres on `localhost:${DEV_DB_PORT:-5433}`
+- MinIO on `localhost:${DEV_MINIO_PORT:-9100}` (API) and `localhost:${DEV_MINIO_CONSOLE_PORT:-9101}` (console)
+- API on `localhost:${DEV_API_PORT:-8010}`
+- Web on `localhost:${DEV_WEB_PORT:-5173}`
+
+Avoiding port conflicts:
+
+```bash
+# Option A: override ports for a second local stack
+DEV_DB_PORT=5434 DEV_API_PORT=8011 DEV_WEB_PORT=5174 DEV_MINIO_PORT=9200 DEV_MINIO_CONSOLE_PORT=9201 \
+  docker compose -p nutriorxata-v1-alt -f infra/compose/dev.yml up -d --build
+
+# Option B: stop the existing stack
+docker compose -p nutriorxata-v1 -f infra/compose/dev.yml down -v
+```
 
 Notes:
 
