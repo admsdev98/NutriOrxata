@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.bootstrap.dev_seed import ensure_dev_worker_seed
 from app.core.config import settings
 from app.core.web.cors import register_cors
 from app.core.web.health import router as health_router
@@ -17,5 +18,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(food_router)
     app.include_router(nutrition_router)
+
+    app.add_event_handler("startup", ensure_dev_worker_seed)
 
     return app

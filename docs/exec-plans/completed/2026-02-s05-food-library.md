@@ -1,6 +1,6 @@
 # S05 Food Library (Ingredients + Dish Templates)
 
-Status: Active
+Status: Completed
 
 References:
 
@@ -35,9 +35,9 @@ Dish templates:
 
 Tests:
 
-- [ ] Unit tests for macro calculations
-- [ ] Basic tenant isolation checks for food endpoints
-- [ ] Read-only mutation checks (403 `read_only`)
+- [x] Unit tests for macro calculations
+- [x] Basic tenant isolation checks for food endpoints
+- [x] Read-only mutation checks (403 `read_only`)
 
 ## Frontend Checklist
 
@@ -56,9 +56,9 @@ Backend:
 
 Frontend:
 
-- [ ] `docker exec nutriorxata-v1-web-1 npm run build`
-- [ ] Manual smoke:
-  - login
-  - create ingredient
-  - create dish template
-  - try deleting ingredient in use and confirm usage list appears
+- [x] `docker exec nutriorxata-v1-web-1 npm run build`
+- [x] Manual smoke:
+  - [x] login (dev seed user: `s04_test_worker@example.com` / `TestPass123!`, no email verification needed)
+  - [x] create ingredient
+  - [x] create dish template
+  - [x] try deleting ingredient in use and confirm usage list appears

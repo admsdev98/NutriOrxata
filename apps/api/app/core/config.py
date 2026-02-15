@@ -20,5 +20,15 @@ class Settings(BaseSettings):
 
     public_api_base_url: str = Field(default="http://localhost:8010/api", validation_alias="PUBLIC_API_BASE_URL")
 
+    dev_seed_worker_enabled: bool = Field(default=True, validation_alias="DEV_SEED_WORKER_ENABLED")
+    dev_seed_worker_email: str = Field(
+        default="s04_test_worker@example.com",
+        validation_alias="DEV_SEED_WORKER_EMAIL",
+    )
+    dev_seed_worker_password: str = Field(
+        default="TestPass123!",
+        validation_alias="DEV_SEED_WORKER_PASSWORD",
+    )
+
 
 settings = Settings()
