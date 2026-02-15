@@ -56,7 +56,7 @@
 1. [x] Implement ingredients CRUD with macro fields.
 2. [x] Implement dish template CRUD.
 3. [x] Add tenant scoping and indexing checks.
-4. [ ] Add API and UI smoke tests.
+4. [x] Add API and UI smoke tests.
 
 ### S06 - Weekly Planning and Plan Instances
 
