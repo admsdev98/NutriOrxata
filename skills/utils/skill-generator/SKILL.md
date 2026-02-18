@@ -20,16 +20,17 @@ This skill acts as a meta-agent to scaffold and register new capabilities within
 If the user hasn't provided full details, the agent **MUST** ask for the missing information before generating files.
 
 **Required Fields:**
-1.  **Name:** (kebab-case, e.g., `frontend-architect`).
-2.  **Description:** A concise summary for the `AGENTS.md` list.
-3.  **Triggers:** specific phrases or contexts that activate the skill.
-4.  **Workflow/Steps:** How should the agent think/act when using this skill?
-5.  **Constraints:** Specific rules (e.g., "Never execute code", "Always use Spanish").
+1.  **Category:** one of `backend`, `frontend`, `database`, `infra`, `qa`, `utils`, `orchestration`.
+2.  **Name:** (kebab-case, e.g., `frontend-architect`).
+3.  **Description:** A concise summary for the `AGENTS.md` list.
+4.  **Triggers:** specific phrases or contexts that activate the skill.
+5.  **Workflow/Steps:** How should the agent think/act when using this skill?
+6.  **Constraints:** Specific rules (e.g., "Never execute code", "Always use Spanish").
 
 ### 2. Generation Phase
 Once requirements are clear:
-1.  Create directory: `skills/<skill-name>/`.
-2.  Generate file: `skills/<skill-name>/SKILL.md` using the **Standard Skill Template** (below).
+1.  Create directory: `skills/<category>/<skill-name>/`.
+2.  Generate file: `skills/<category>/<skill-name>/SKILL.md` using the **Standard Skill Template** (below).
 3.  **Register (Global):** Add the new skill entry to `docs/SKILLS_CATALOG.md`.
 4.  **Optional:** Add a short note in root `AGENTS.md` if the skill changes daily workflows.
 

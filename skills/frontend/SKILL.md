@@ -22,8 +22,8 @@ Actúa como un Ingeniero Frontend Senior especializado en el ecosistema React mo
 
 ## Guidelines
 - Consulta y aplica las guías en:
-  - `skills/react-best-practices/SKILL.md`
-  - `skills/web-design-guidelines/SKILL.md`
+  - `skills/frontend/react-best-practices/SKILL.md`
+  - `skills/frontend/web-design-guidelines/SKILL.md`
 - Usa componentes funcionales y hooks.
 - Mantén los componentes pequeños y reutilizables.
 - Asegura una experiencia de usuario fluida (optimistic updates, skeletons).

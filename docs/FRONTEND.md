@@ -34,4 +34,4 @@ apps/web/src/
 
 - Avoid unnecessary re-renders.
 - Keep payloads and bundle composition lean.
-- Follow rules from `skills/react-best-practices`.
+- Follow rules from `skills/frontend/react-best-practices`.

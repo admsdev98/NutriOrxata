@@ -1,0 +1,116 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Project agents for the orchestration workflow.
+  // Skills themselves do NOT enforce a model; agents do.
+  "agent": {
+    "orchestration-planner": {
+      "description": "Planning-only orchestration (sprint/block plans)",
+      "mode": "subagent",
+      "model": "openai/gpt-5.2",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": true
+      },
+      "permission": {
+        "skill": {
+          "*": "deny",
+          "planning-session-orchestrator": "allow"
+        },
+        "bash": {
+          "*": "ask",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git branch*": "allow",
+          "git rev-parse*": "allow"
+        }
+      }
+    },
+
+    "orchestration-executor": {
+      "description": "Execution-only orchestration (implement approved blocks)",
+      "mode": "subagent",
+      "model": "openai/gpt-5.3-codex",
+      "temperature": 0.2,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      },
+      "permission": {
+        "skill": {
+          "*": "deny",
+          "execution-session-orchestrator": "allow"
+        },
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git reset*": "ask",
+          "git rebase*": "ask"
+        }
+      }
+    },
+
+    "orchestration-validator": {
+      "description": "Validation-only orchestration (quality gate + evidence)",
+      "mode": "subagent",
+      "model": "openai/gpt-5.2",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      },
+      "permission": {
+        "skill": {
+          "*": "deny",
+          "validation-session-orchestrator": "allow"
+        },
+        "bash": {
+          "*": "ask",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "docker *": "allow",
+          "npm *": "allow",
+          "pnpm *": "allow",
+          "bun *": "allow",
+          "python *": "allow",
+          "pytest *": "allow",
+          "alembic *": "allow"
+        }
+      }
+    },
+
+    "orchestration-closer": {
+      "description": "Execution plan closeout (move to completed + fix plan doc)",
+      "mode": "subagent",
+      "model": "openai/gpt-5.2",
+      "reasoningEffort": "medium",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      },
+      "permission": {
+        "skill": {
+          "*": "deny",
+          "execution-plan-closer": "allow"
+        },
+        "bash": {
+          "*": "ask",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git mv*": "allow"
+        }
+      }
+    }
+  }
+}

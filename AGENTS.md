@@ -56,12 +56,15 @@ Core invariant: all domain data is tenant-scoped unless explicitly documented ot
 
 Use repository skills before implementation.
 
-- Backend/API/data model: `skills/backend` + `skills/postgresql-table-design`.
-- Frontend/UI: `skills/frontend` + `skills/react-best-practices`.
-- UI design quality: `skills/frontend-design` or `skills/web-design-guidelines`.
-- Infra/deployment: `skills/devops` + `skills/docker`.
-- Planning and roadmap decomposition: `skills/planning-orchestrator`.
-- QA strategy: `skills/qa-test-planner`.
+- Backend/API: `skills/backend/SKILL.md`.
+- Database/data model: `skills/database/postgresql-table-design/SKILL.md`.
+- Frontend/UI: `skills/frontend/SKILL.md` + `skills/frontend/react-best-practices/SKILL.md`.
+- UI design quality: `skills/frontend/frontend-design/SKILL.md` or `skills/frontend/web-design-guidelines/SKILL.md`.
+- Infra/deployment: `skills/infra/devops/SKILL.md` + `skills/infra/docker/SKILL.md`.
+- Planning and roadmap decomposition: `skills/orchestration/planning-session-orchestrator/SKILL.md`.
+- Execution from approved plan: `skills/orchestration/execution-session-orchestrator/SKILL.md`.
+- QA strategy: `skills/qa/qa-test-planner/SKILL.md`.
+- Skill scaffolding utility: `skills/utils/skill-generator/SKILL.md`.
 
 ## 7) Documentation Contract
 
