@@ -7,7 +7,7 @@ from app.modules.auth.domain.models import Tenant
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def tenant_access_mode(tenant: Tenant) -> str:
