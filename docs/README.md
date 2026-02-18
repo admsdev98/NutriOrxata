@@ -26,6 +26,7 @@ Spanish is allowed only for a human summary at `docs/HUMAN_OVERVIEW.es.md`.
   - `docs/product-specs/client-experience.md`
 - `docs/exec-plans/active/index.md`
 - `docs/exec-plans/completed/index.md`
+- `docs/exec-plans/templates/execution-session-template.md`
 - `docs/exec-plans/tech-debt-tracker.md`
 - `docs/generated/db-schema.md`
 - `docs/references/`

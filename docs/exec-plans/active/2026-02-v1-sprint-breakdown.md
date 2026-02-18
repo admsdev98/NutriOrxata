@@ -60,10 +60,19 @@
 
 ### S06 - Weekly Planning and Plan Instances
 
-1. [ ] Implement week plan aggregate model.
-2. [ ] Implement template-to-instance flow.
-3. [ ] Ensure edits on instances do not mutate templates.
-4. [ ] Add planning integration tests.
+1. [x] Implement week plan aggregate model.
+2. [x] Implement template-to-instance flow.
+3. [x] Ensure edits on instances do not mutate templates.
+4. [x] Add planning integration tests.
+
+### S06X - Worker Assignment UX and Client Read Surface (Follow-up)
+
+Reference: `docs/exec-plans/completed/2026-02-s06x-worker-client-planning-followup.md`
+
+1. [x] Add weekly template CRUD in worker planning UI.
+2. [x] Add bulk dish assignment actions (day/selected days/week).
+3. [x] Add meal-type suggestion flow for dish assignment.
+4. [x] Add minimum client read-only weekly plan surface.
 
 ### S07 - Training Flows and Logs
 
@@ -112,3 +121,10 @@
 - Unit tests for pure business rules.
 - Integration tests for auth/tenant boundaries.
 - Manual QA checklist for key worker and client flows.
+
+## 5. Remaining Work (Rolling)
+
+This plan remains active as the rolling roadmap until v1 is complete.
+
+- S07-S11 are not executed yet (unchecked items above).
+- For each sprint/block that enters execution, create/activate a dedicated execution session plan in `docs/exec-plans/active/` and move it to `docs/exec-plans/completed/` only after a recorded validation verdict.
