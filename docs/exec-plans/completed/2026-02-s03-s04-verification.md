@@ -21,7 +21,7 @@ This note records the verification performed for the S03 worker workspace shell 
 Backend unit tests:
 
 ```bash
-docker exec nutriorxata-v1-api-1 python -m unittest discover -s tests -p 'test_*.py' -v
+docker compose -f infra/compose/dev.yml exec api python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 Health checks:
