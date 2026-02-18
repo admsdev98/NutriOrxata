@@ -7,6 +7,7 @@ from app.core.web.health import router as health_router
 from app.modules.auth.api import router as auth_router
 from app.modules.food.api import router as food_router
 from app.modules.nutrition.api import router as nutrition_router
+from app.modules.planning.api import router as planning_router
 
 
 def create_app() -> FastAPI:
@@ -18,6 +19,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(food_router)
     app.include_router(nutrition_router)
+    app.include_router(planning_router)
 
     app.add_event_handler("startup", ensure_dev_worker_seed)
 

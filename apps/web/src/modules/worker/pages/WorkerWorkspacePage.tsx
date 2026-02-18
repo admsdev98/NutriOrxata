@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 
 import { NutritionTabPanel } from "../../nutrition/components/NutritionTabPanel";
+import { WeeklyPlanTabPanel } from "../../planning/components/WeeklyPlanTabPanel";
 import { buildProfilePayload, profileToForm } from "../../nutrition/profileMapping";
 import {
   DEFAULT_PROFILE_FORM,
@@ -557,6 +558,10 @@ export default function WorkerWorkspacePage() {
             })}
           </div>
 
+          <p className="mt-2 text-xs text-neutral-400">
+            Need a client read-only check? Open <Link to="/client/weekly-plan" className="underline">client weekly plan view</Link>.
+          </p>
+
           {activeTab.id === "nutrition" ? (
             <NutritionTabPanel
               selectedClientName={selectedClient.fullName}
@@ -584,11 +589,18 @@ export default function WorkerWorkspacePage() {
                 void handleReloadTargets();
               }}
             />
+          ) : activeTab.id === "weekly-plan" ? (
+            <WeeklyPlanTabPanel
+              clientRef={selectedClient.id}
+              selectedClientName={selectedClient.fullName}
+              authSession={authSession}
+              canMutate={canMutate}
+            />
           ) : (
             <div className="mt-4 rounded border border-neutral-800 bg-neutral-950 p-3">
               <p className="text-xs uppercase tracking-wide text-neutral-400">{activeTab.label}</p>
               <p className="mt-1 text-sm text-neutral-200">{activeTab.description}</p>
-              <p className="mt-2 text-xs text-neutral-400">Placeholder module. Functional implementation arrives in S05-S09.</p>
+              <p className="mt-2 text-xs text-neutral-400">Placeholder module. Functional implementation arrives in S07-S09.</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button

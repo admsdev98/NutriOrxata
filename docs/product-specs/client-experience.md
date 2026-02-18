@@ -10,6 +10,13 @@ Give clients a clear daily execution surface for meals, training, progress, and 
 - Log activity and adherence.
 - Track progress and communicate with worker.
 
+## Current Delivered Baseline
+
+- Route: `/client/weekly-plan`.
+- Read-only weekly plan lookup by `client_ref + week_start_date`.
+- Client can open any assigned slot and inspect dish details and notes.
+- No client-side mutation is allowed in this baseline.
+
 ## Constraints
 
 - Keep flow simple and mobile-first.
@@ -20,3 +27,4 @@ Give clients a clear daily execution surface for meals, training, progress, and 
 
 - Client can identify next action on first screen.
 - State messaging for blocked access is calm and clear.
+- Client can read assigned weekly slots and inspect detail in one tap from the list.

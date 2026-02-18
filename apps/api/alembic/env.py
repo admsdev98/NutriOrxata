@@ -16,6 +16,7 @@ from app.core.db.base import Base
 from app.modules.auth.domain import models as auth_models  # noqa: F401
 from app.modules.food.domain import models as food_models  # noqa: F401
 from app.modules.nutrition.domain import models as nutrition_models  # noqa: F401
+from app.modules.planning.domain import models as planning_models  # noqa: F401
 
 
 config = context.config

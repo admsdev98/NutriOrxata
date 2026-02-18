@@ -5,5 +5,6 @@
 - `docs/product-specs/client-experience.md`
 - `docs/product-specs/nutrition-targets.md`
 - `docs/product-specs/food-library.md`
+- `docs/product-specs/weekly-planning.md`
 
 Product specs describe user-visible behavior and acceptance criteria.
