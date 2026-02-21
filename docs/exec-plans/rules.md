@@ -80,10 +80,12 @@ Go/No-Go:
 
 ## Tech debt (active)
 
-- TD-003 Testing: tenant isolation coverage is uneven beyond Food; expand as S06-S09 land.
-- TD-004 Ops: missing scripted smoke checks for critical flows (target S10).
-- TD-006 Security: audit event baseline missing for auth and critical mutation paths (target S10-S11).
-- TD-007 Docs/Tooling: schema snapshot generation automation missing (target S11).
+| ID | Area | Debt | Impact | Target |
+| --- | --- | --- | --- | --- |
+| TD-003 | Testing | Tenant isolation integration coverage is uneven beyond Food; expand as S06-S09 land. | High | S06-S09 |
+| TD-004 | Operations | Scripted smoke checks for critical flows are missing (expected to move into `scripts/`). | Medium | S10 |
+| TD-006 | Security | Audit event baseline missing for auth and critical mutation paths (no sensitive payloads). | High | S10-S11 |
+| TD-007 | Docs/Tooling | Schema snapshot generation automation missing (drift risk). | Medium | S11 |
 
 Debt rule:
 

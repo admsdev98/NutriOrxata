@@ -27,6 +27,14 @@ Proximos sprints (resumen):
 - S10: operaciones (backup/restore, smoke scripts, recovery).
 - S11: calidad continua (checks, deuda tecnica).
 
+Sprints completados (resumen):
+
+- S00: baseline de docs y mapa de arquitectura.
+- S01: auth + modos de acceso deterministas.
+- S02: tenant isolation baseline + indexes (audit events pendiente).
+- S03/S04: worker shell + nutrition targets (verificacion registrada).
+- S05: food library (ingredientes + dish templates) + UI worker.
+
 No objetivos (por ahora):
 
 - Automatizacion completa de cobros.
@@ -60,6 +68,14 @@ Next sprints (high level):
 - S09: progress tracking.
 - S10: reliability/ops.
 - S11: continuous quality.
+
+Completed sprints (high level):
+
+- S00: docs baseline and architecture map.
+- S01: auth hardening + deterministic access modes.
+- S02: tenant isolation baseline + indexes (audit events pending).
+- S03/S04: worker shell + nutrition targets (verification recorded).
+- S05: food library (ingredients + dish templates) + worker UI.
 
 Non-goals (for now):
 
