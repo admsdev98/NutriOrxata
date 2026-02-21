@@ -5,9 +5,9 @@ Treat it as a map, not an encyclopedia.
 
 ## 0) 60-Second Startup
 
-1) Read `docs/README.md`.
-2) Read `ARCHITECTURE.md`.
-3) Read `docs/PLANS.md` and `docs/exec-plans/active/`.
+1) Read `docs/exec-plans/objective.md`.
+2) Read `docs/exec-plans/rules.md`.
+3) Read `ARCHITECTURE.md`.
 4) Check git branch and working tree.
 5) If behavior changes, update canonical docs in the same change.
 
@@ -47,10 +47,12 @@ Core invariant: all domain data is tenant-scoped unless explicitly documented ot
 ## 5) Architecture Entry Points
 
 - `ARCHITECTURE.md`: domain and layer boundaries.
-- `docs/DESIGN.md`: UX principles and product beliefs.
-- `docs/FRONTEND.md`: frontend architecture and constraints.
-- `docs/SECURITY.md`: security and data lifecycle controls.
-- `docs/RELIABILITY.md`: ops and resilience baseline.
+- `docs/frontend/objective.md`: frontend objective (human).
+- `docs/backend/objective.md`: backend objective (human).
+- `docs/db/objective.md`: database objective (human).
+- `docs/qa-testing/objective.md`: verification objective (human).
+- `docs/exec-plans/objective.md`: human roadmap.
+- `docs/exec-plans/rules.md`: execution playbook (technical).
 
 ## 6) Tooling and Skill Routing
 
@@ -65,8 +67,10 @@ Use repository skills before implementation.
 
 ## 7) Documentation Contract
 
-- Canonical documentation is in English.
-- Human summary in Spanish is allowed only in `docs/HUMAN_OVERVIEW.es.md`.
+- Human docs are bilingual (Spanish + English).
+- Technical docs (for models/subagents) are English only.
+- Roadmap for humans lives in `docs/exec-plans/objective.md`.
+- Technical execution guidance lives in `docs/exec-plans/rules.md`.
 - One topic must have one canonical file.
 - Do not keep parallel conflicting docs.
 - Update docs and code together in the same change.

@@ -26,8 +26,8 @@ docker compose -p nutriorxata -f infra/compose/prod.yml --env-file infra/compose
 
 - `AGENTS.md`
 - `ARCHITECTURE.md`
-- `docs/README.md`
-- `docs/PLANS.md`
+- `docs/exec-plans/objective.md`
+- `docs/exec-plans/rules.md`
 
 ## Legacy
 
@@ -38,5 +38,3 @@ docker compose -p nutriorxata -f infra/compose/prod.yml --env-file infra/compose
 Keep `skills/` canonical in repository root.
 
 Keep `.opencode/` as a lightweight symlink shim to canonical project docs/skills.
-
-Run `./scripts/setup-tooling-shims.sh` to recreate the expected shim layout.

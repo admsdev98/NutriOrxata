@@ -1,6 +1,0 @@
-Design system reference notes for LLM agents.
-
-- Prioritize consistency over novelty for core product surfaces.
-- Keep typography and spacing scales predictable.
-- Use explicit states for loading/error/empty/read-only/blocked.
-- Keep action hierarchy clear: one primary action per critical empty state.

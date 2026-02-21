@@ -1,5 +1,0 @@
-uv reference notes for Python environments.
-
-- Keep lockfile and dependency strategy explicit.
-- Prefer reproducible installation commands.
-- Keep migration commands documented alongside runtime commands.

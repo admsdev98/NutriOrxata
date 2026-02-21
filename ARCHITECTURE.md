@@ -73,4 +73,4 @@ Disallowed:
 
 - Every behavior change updates canonical docs in the same change.
 - One topic has one canonical documentation file.
-- Sprint plans and tech debt are tracked in `docs/exec-plans`.
+- Sprint execution playbook and tech debt are tracked in `docs/exec-plans/rules.md`.

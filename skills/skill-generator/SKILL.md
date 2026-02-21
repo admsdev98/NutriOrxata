@@ -30,7 +30,7 @@ If the user hasn't provided full details, the agent **MUST** ask for the missing
 Once requirements are clear:
 1.  Create directory: `skills/<skill-name>/`.
 2.  Generate file: `skills/<skill-name>/SKILL.md` using the **Standard Skill Template** (below).
-3.  **Register (Global):** Add the new skill entry to `docs/SKILLS_CATALOG.md`.
+3.  **Register (Global):** Add the new skill entry to the skills list in `docs/exec-plans/rules.md`.
 4.  **Optional:** Add a short note in root `AGENTS.md` if the skill changes daily workflows.
 
 ## Standard Skill Template
@@ -66,4 +66,4 @@ trigger: <implicit|explicit>
 
 ## 3. Post-Generation Check
 *   Confirm to the user that the skill is created and registered.
-*   Show the updated list of skills in `docs/SKILLS_CATALOG.md` (briefly).
+*   Show the updated list of skills in `docs/exec-plans/rules.md` (briefly).

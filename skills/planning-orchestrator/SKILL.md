@@ -21,7 +21,7 @@ This skill is designed to bridge the gap between high-level roadmap goals and co
 
 1.  **Context Reconnaissance (Read-Only)**
     *   Read `AGENTS.md` (Global & Local).
-    *   Read `docs/PLANS.md` and `docs/exec-plans/active/` to locate the current position.
+    *   Read `docs/exec-plans/objective.md` and `docs/exec-plans/rules.md` to locate the current position.
     *   Scan `skills/` to understand available technical capabilities and best practices to reference.
     *   Analyze existing file structure in `apps/` and `infra/` to ensure consistency.
 
@@ -31,7 +31,8 @@ This skill is designed to bridge the gap between high-level roadmap goals and co
     *   Select appropriate patterns (referencing `skills/backend`, `skills/frontend`, etc.).
 
 3.  **Document Generation**
-    *   Create a new file in `docs/` (e.g., `docs/PLAN_PHASE_1_CYCLE_2.md` or `docs/RFC_001_FEATURE.md`).
+    *   Do not create new documentation files by default.
+    *   Produce the plan as the agent response, or (if explicitly requested) propose an update to `docs/exec-plans/rules.md`.
     *   **MUST** Follow the **Standard Planning Template** (see below).
 
 ## Standard Planning Template
@@ -39,7 +40,7 @@ This skill is designed to bridge the gap between high-level roadmap goals and co
 All generated plans must strictly follow this visual structure:
 
 ```markdown
-# 🗺️ [Phase/Cycle Name] Implementation Plan
+# [Phase/Cycle Name] Implementation Plan
 
 **Status:** Draft
 **Context:** [Link to specific Roadmap Item in DEVELOPMENT_ROADMAP.md]
