@@ -18,38 +18,43 @@
 
 ### S00 - Docs Harness and Architecture Map
 
-1. [ ] Create canonical docs structure and indexes.
-2. [ ] Rewrite AGENTS map-first and add architecture map.
-3. [ ] Remove conflicting documentation paths.
-4. [ ] Publish Spanish human summary (`docs/HUMAN_OVERVIEW.es.md`).
+1. [x] Create canonical docs structure and indexes.
+2. [x] Rewrite AGENTS map-first and add architecture map.
+3. [x] Remove conflicting documentation paths.
+4. [x] Publish Spanish human summary (`docs/HUMAN_OVERVIEW.es.md`).
 
 ### S01 - Auth and Access Gate Hardening
 
-1. [ ] Consolidate auth route handlers into modular path.
-2. [ ] Standardize access mode evaluation.
-3. [ ] Add deterministic error contracts for auth flows.
-4. [ ] Add auth unit tests for verification/login/access mode.
+1. [x] Consolidate auth route handlers into modular path.
+2. [x] Standardize access mode evaluation.
+3. [x] Add deterministic error contracts for auth flows.
+4. [x] Add auth unit tests for verification/login/access mode.
 
 ### S02 - Tenant Enforcement and Indexing Baseline
 
-1. [ ] Audit endpoint tenant filters.
-2. [ ] Add missing tenant-oriented indexes.
-3. [ ] Add audit event baseline for critical actions.
-4. [ ] Add integration tests for tenant isolation.
+1. [x] Audit endpoint tenant filters.
+2. [x] Add missing tenant-oriented indexes.
+3. [ ] Add audit event baseline for critical actions (deferred to tech debt TD-006).
+4. [x] Add integration tests for tenant isolation baseline.
+
+Evidence notes:
+
+- Tenant isolation integration baseline exists in `apps/api/tests/test_food_endpoints.py`.
+- Tenant-oriented indexes are present in `0002_nutrition_profiles` and `0003_food_library` migrations.
 
 ### S03 - Worker Workspace Shell
 
-1. [ ] Build worker shell route skeleton and navigation.
-2. [ ] Add client list and workspace shell tabs.
-3. [ ] Add loading/error/empty baseline for worker flows.
-4. [ ] Verify <=3-click common paths.
+1. [x] Build worker shell route skeleton and navigation.
+2. [x] Add client list and workspace shell tabs.
+3. [x] Add loading/error/empty baseline for worker flows.
+4. [x] Verify <=3-click common paths.
 
 ### S04 - Nutrition Inputs and Targets
 
-1. [ ] Define nutrition profile schema and API contracts.
-2. [ ] Implement target calculators and overrides.
-3. [ ] Add daily and weekly target outputs.
-4. [ ] Add formula-level unit tests.
+1. [x] Define nutrition profile schema and API contracts.
+2. [x] Implement target calculators and overrides.
+3. [x] Add daily and weekly target outputs.
+4. [x] Add formula-level unit tests.
 
 ### S05 - Food Library and Dish Templates
 
